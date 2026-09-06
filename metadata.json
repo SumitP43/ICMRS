@@ -1,0 +1,7 @@
+{
+  "name": "ICMRS — Intelligent Civic Response System",
+  "description": "Municipal emergency and civic response management platform for citizens and public works officers.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
