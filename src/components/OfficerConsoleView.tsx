@@ -11,8 +11,17 @@ import {
   Filter,
   PlusCircle,
   Radio,
-  FileCheck
+  FileCheck,
+  Volume2,
+  VolumeX,
+  Bell
 } from 'lucide-react';
+import { 
+  playNewComplaintChime, 
+  playEscalationChime, 
+  isOfficerSoundEnabled, 
+  setOfficerSoundEnabled 
+} from '../utils/soundEffects';
 
 interface OfficerConsoleViewProps {
   complaints: CivicComplaint[];
@@ -31,6 +40,27 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
   const [filterStatus, setFilterStatus] = useState<string>('Active');
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [broadcastSent, setBroadcastSent] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(isOfficerSoundEnabled());
+  const [chimePlaying, setChimePlaying] = useState<string | null>(null);
+
+  const handleToggleSound = () => {
+    const nextState = !soundEnabled;
+    setSoundEnabled(nextState);
+    setOfficerSoundEnabled(nextState);
+    if (nextState) {
+      playNewComplaintChime();
+    }
+  };
+
+  const handleTestChime = (type: 'new' | 'escalation') => {
+    setChimePlaying(type);
+    if (type === 'new') {
+      playNewComplaintChime();
+    } else {
+      playEscalationChime();
+    }
+    setTimeout(() => setChimePlaying(null), 800);
+  };
 
   const filtered = complaints.filter(c => {
     if (filterCategory !== 'All' && c.category !== filterCategory) return false;
@@ -110,8 +140,77 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
           </p>
         </div>
 
-        {/* Quick Officer Stat Indicators */}
-        <div className="flex items-center gap-3">
+        {/* Quick Officer Stat Indicators & Sound Notification Center */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Audio Chime Notification Widget */}
+          <div className="bg-white px-4 py-2.5 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                id="officer-toggle-chime-btn"
+                onClick={handleToggleSound}
+                title={soundEnabled ? "Mute audio alerts" : "Enable audio alerts"}
+                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                  soundEnabled
+                    ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                }`}
+              >
+                {soundEnabled ? (
+                  <Volume2 className="w-4 h-4" />
+                ) : (
+                  <VolumeX className="w-4 h-4" />
+                )}
+              </button>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${soundEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}`}></span>
+                  <span className="text-[11px] uppercase font-bold text-gray-700 block">
+                    {soundEnabled ? 'Chime Active' : 'Chime Muted'}
+                  </span>
+                </div>
+                <span className="text-[10px] text-gray-400 block">
+                  New & Escalated Incidents
+                </span>
+              </div>
+            </div>
+
+            <div className="h-6 w-px bg-gray-200"></div>
+
+            {/* Test buttons */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                id="test-new-complaint-chime-btn"
+                onClick={() => handleTestChime('new')}
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                  chimePlaying === 'new'
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                }`}
+                title="Preview subtle two-tone chime for newly filed complaints"
+              >
+                <Bell className="w-3 h-3 text-indigo-500" />
+                <span>Test New</span>
+              </button>
+
+              <button
+                type="button"
+                id="test-escalation-chime-btn"
+                onClick={() => handleTestChime('escalation')}
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                  chimePlaying === 'escalation'
+                    ? 'bg-rose-600 text-white border-rose-600'
+                    : 'bg-gray-50 text-rose-700 border-gray-200 hover:bg-gray-100'
+                }`}
+                title="Preview alert chime for priority escalation"
+              >
+                <AlertCircle className="w-3 h-3 text-rose-500" />
+                <span>Test Escalated</span>
+              </button>
+            </div>
+          </div>
+
           <div className="bg-white px-5 py-3 rounded-2xl border border-gray-200 shadow-sm text-right">
             <span className="text-[11px] uppercase font-bold text-gray-400 block">Open In Queue</span>
             <span className="font-['Plus_Jakarta_Sans'] font-black text-[22px] text-indigo-600">

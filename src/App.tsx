@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { RefreshCw, Bell, AlertCircle, Volume2, X } from 'lucide-react';
 import { 
   CivicRole, 
   NavTab, 
@@ -18,6 +18,15 @@ import {
   FAQ_ITEMS 
 } from './data/mockData';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { 
+  subscribeComplaints, 
+  saveComplaint, 
+  updateComplaint 
+} from './services/complaintService';
+import { 
+  playNewComplaintChime, 
+  playEscalationChime 
+} from './utils/soundEffects';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Navbar } from './components/Navbar';
@@ -145,48 +154,50 @@ function ICMRSApplication() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Polling synchronization state
-  const POLLING_INTERVAL_MS = 60000; // 60 seconds
-  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
+  // Live synchronization state
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(new Date());
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
-  // Reusable complaints fetcher for initial load, polling, and on-demand sync
-  const fetchComplaints = useCallback(async (isBackground = false) => {
-    try {
-      if (!isBackground) setIsSyncing(true);
-      const res = await fetch('/api/complaints');
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-          setComplaints(json.data);
+  // Real-time local & server subscription for complaints
+  useEffect(() => {
+    setIsSyncing(true);
+    const unsubscribe = subscribeComplaints(
+      (freshComplaints) => {
+        if (freshComplaints && freshComplaints.length > 0) {
+          setComplaints(freshComplaints);
           setLastSyncedAt(new Date());
 
-          // Keep selectedComplaint updated with fresh data from server
+          // Keep selected complaint updated with live snapshot
           setSelectedComplaint(prev => {
-            const fresh = json.data.find((c: CivicComplaint) => c.id === prev.id);
-            return fresh || prev;
+            const live = freshComplaints.find(c => c.id === prev.id);
+            return live || freshComplaints[0];
           });
         }
+        setIsSyncing(false);
+      },
+      (error) => {
+        console.warn('[Complaints] Realtime subscription notice:', error);
+        setIsSyncing(false);
       }
-    } catch (err) {
-      console.warn('Complaints background polling sync error:', err);
-    } finally {
-      if (!isBackground) setIsSyncing(false);
-    }
+    );
+
+    return () => unsubscribe();
   }, []);
 
-  // Polling mechanism: fetch immediately on mount and every 60 seconds thereafter
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    fetchComplaints(false);
-
-    const intervalId = setInterval(() => {
-      fetchComplaints(true);
-    }, POLLING_INTERVAL_MS);
-
-    return () => clearInterval(intervalId);
-  }, [isAuthenticated, fetchComplaints]);
+  // On-demand sync trigger
+  const handleSyncNow = useCallback(() => {
+    setIsSyncing(true);
+    fetch('/api/complaints')
+      .then(res => res.ok ? res.json() : null)
+      .then(json => {
+        if (json && json.success && Array.isArray(json.data)) {
+          setComplaints(json.data);
+          setLastSyncedAt(new Date());
+        }
+      })
+      .catch(err => console.warn('[Complaints] Sync error:', err))
+      .finally(() => setIsSyncing(false));
+  }, []);
 
   // Filter complaints based on navbar search query
   const searchedComplaints = complaints.filter(c => {
@@ -201,46 +212,46 @@ function ICMRSApplication() {
     );
   });
 
-  // Handlers
+  // Handlers with persistent local and server sync
   const handleAddNewComplaint = async (newComplaint: CivicComplaint) => {
+    // Optimistic UI update
     setComplaints(prev => [newComplaint, ...prev]);
     setSelectedComplaint(newComplaint);
 
     try {
-      await fetch('/api/complaints', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newComplaint)
+      await saveComplaint(newComplaint, {
+        uid: currentUser?.id || 'citizen-anon',
+        email: currentUser?.email || null
       });
     } catch (err) {
-      console.warn('Failed to sync new complaint to backend API:', err);
+      console.error('Failed to persist complaint:', err);
     }
   };
 
   const handleUpdateComplaint = async (updated: CivicComplaint) => {
+    // Optimistic UI update
     setComplaints(prev => prev.map(c => c.id === updated.id ? updated : c));
     if (selectedComplaint.id === updated.id) {
       setSelectedComplaint(updated);
     }
 
     try {
-      await fetch(`/api/complaints/${encodeURIComponent(updated.id)}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated)
-      });
+      await updateComplaint(updated.id, updated);
     } catch (err) {
-      console.warn('Failed to sync complaint update to backend API:', err);
+      console.error('Failed to sync complaint update:', err);
     }
   };
 
-  const handleAddOfficerNote = (complaintId: string, note: OfficerNote) => {
+  const handleAddOfficerNote = async (complaintId: string, note: OfficerNote) => {
+    const target = complaints.find(c => c.id === complaintId);
+    const updatedNotes = target ? [...target.officerNotes, note] : [note];
+
     setComplaints(prev =>
       prev.map(c => {
         if (c.id === complaintId) {
           return {
             ...c,
-            officerNotes: [...c.officerNotes, note]
+            officerNotes: updatedNotes
           };
         }
         return c;
@@ -249,12 +260,18 @@ function ICMRSApplication() {
     if (selectedComplaint.id === complaintId) {
       setSelectedComplaint(prev => ({
         ...prev,
-        officerNotes: [...prev.officerNotes, note]
+        officerNotes: updatedNotes
       }));
+    }
+
+    try {
+      await updateComplaint(complaintId, { officerNotes: updatedNotes });
+    } catch (err) {
+      console.error('Failed to persist officer note:', err);
     }
   };
 
-  const handleUploadPhotoSuccess = (complaintId: string, photoUrl: string) => {
+  const handleUploadPhotoSuccess = async (complaintId: string, photoUrl: string) => {
     setComplaints(prev =>
       prev.map(c => {
         if (c.id === complaintId) {
@@ -272,36 +289,59 @@ function ICMRSApplication() {
         imageUrl: photoUrl
       }));
     }
+
+    try {
+      await updateComplaint(complaintId, { imageUrl: photoUrl });
+    } catch (err) {
+      console.error('Failed to persist photo URL:', err);
+    }
   };
 
-  const handleEscalatePriority = (complaintId: string) => {
+  const handleEscalatePriority = async (complaintId: string) => {
+    const escalationNote: OfficerNote = {
+      id: `n-${Date.now()}`,
+      author: currentUser?.name || 'System Dispatch',
+      role: currentUser?.role || 'Civic-OS AI',
+      time: 'Just now',
+      text: 'Priority escalated to Critical via Citizen Portal. Priority dispatch alerted.'
+    };
+
+    const target = complaints.find(c => c.id === complaintId);
+    const updatedNotes = target ? [...target.officerNotes, escalationNote] : [escalationNote];
+    const updates: Partial<CivicComplaint> = {
+      priority: 'Critical',
+      slaStatus: 'urgent',
+      totalSlaHours: 4,
+      slaRemaining: '4h 00m SLA remaining (Escalated)',
+      officerNotes: updatedNotes
+    };
+
     setComplaints(prev =>
       prev.map(c => {
         if (c.id === complaintId) {
           return {
             ...c,
-            priority: 'Critical',
-            slaStatus: 'urgent',
-            totalSlaHours: 4,
-            slaRemaining: '4h 00m SLA remaining (Escalated)',
-            officerNotes: [
-              ...c.officerNotes,
-              {
-                id: `n-${Date.now()}`,
-                author: 'System Dispatch',
-                role: 'Civic-OS AI',
-                time: 'Just now',
-                text: 'Priority escalated to Critical via Citizen Portal. Priority dispatch alerted.'
-              }
-            ]
+            ...updates
           };
         }
         return c;
       })
     );
+    if (selectedComplaint.id === complaintId) {
+      setSelectedComplaint(prev => ({
+        ...prev,
+        ...updates
+      }));
+    }
+
+    try {
+      await updateComplaint(complaintId, updates);
+    } catch (err) {
+      console.error('Failed to persist escalation:', err);
+    }
   };
 
-  const handleRateIncident = (complaintId: string, rating: number) => {
+  const handleRateIncident = async (complaintId: string, rating: number) => {
     setComplaints(prev =>
       prev.map(c => {
         if (c.id === complaintId) {
@@ -313,6 +353,18 @@ function ICMRSApplication() {
         return c;
       })
     );
+    if (selectedComplaint.id === complaintId) {
+      setSelectedComplaint(prev => ({
+        ...prev,
+        rating: rating
+      }));
+    }
+
+    try {
+      await updateComplaint(complaintId, { rating });
+    } catch (err) {
+      console.error('Failed to persist rating:', err);
+    }
   };
 
   const handleOpenOfficerNotes = (complaint: CivicComplaint) => {
@@ -394,13 +446,13 @@ function ICMRSApplication() {
                 )}
                 <button
                   type="button"
-                  onClick={() => fetchComplaints(false)}
+                  onClick={handleSyncNow}
                   disabled={isSyncing}
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 font-sans font-bold text-[11px] transition-all cursor-pointer active:scale-95 disabled:opacity-60"
-                  title="Force immediate poll from server"
+                  title="Real-time synchronized with municipal dispatch"
                 >
                   <RefreshCw className={`w-3 h-3 text-indigo-600 ${isSyncing ? 'animate-spin' : ''}`} />
-                  <span>{isSyncing ? 'Syncing...' : 'Sync Now'}</span>
+                  <span>{isSyncing ? 'Syncing...' : 'Real-time Synced'}</span>
                 </button>
               </div>
             </div>

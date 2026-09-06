@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CivicComplaint, CivicAlert, EmergencyHotline, FAQItem } from '../types';
 import { Star, ChevronDown, ChevronUp, AlertCircle, Phone, MapPin, Sparkles, Flame, Radio } from 'lucide-react';
 import { CivicLeafletMap } from './CivicLeafletMap';
+import { useAuth } from '../context/AuthContext';
 
 interface CitizenHubViewProps {
   complaints: CivicComplaint[];
@@ -32,9 +33,13 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
   onEscalatePriority,
   onRateIncident
 }) => {
+  const { currentUser } = useAuth();
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
   const [selectedPin, setSelectedPin] = useState<string | null>(null);
   const [emergencyAlertDialed, setEmergencyAlertDialed] = useState<string | null>(null);
+
+  const displayName = currentUser?.name || 'Marcus Vance';
+  const citizenToken = currentUser?.badgeNumber || 'CT-88942-X';
 
   const activeComplaints = complaints.filter(c => c.status !== 'Resolved');
   const resolvedComplaints = complaints.filter(c => c.status === 'Resolved');
@@ -51,19 +56,19 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
   };
 
   return (
-    <div className="w-full max-w-[100rem] mx-auto px-4 sm:px-6 py-8">
+    <div className="w-full max-w-[100rem] mx-auto px-4 sm:px-6 py-6 sm:py-8">
       {/* Top Welcome Matrix & Pulse Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
+          <div className="flex items-center gap-2 mb-2">
             <span className="bento-badge-indigo">
               <span className="w-2 h-2 rounded-full bg-indigo-600 animate-ping"></span>
               Civic-OS v4.2 Connected
             </span>
-            <span className="text-gray-400 text-[11px] font-mono uppercase tracking-wider">• Citizen Token #CT-88942-X</span>
+            <span className="text-gray-400 text-[11px] font-mono uppercase tracking-wider">• Citizen Token #{citizenToken}</span>
           </div>
-          <h1 className="font-['Plus_Jakarta_Sans'] text-[32px] font-black text-[#111827] tracking-tight">
-            Welcome back, <span className="text-indigo-600">Marcus Vance</span>
+          <h1 className="font-['Plus_Jakarta_Sans'] text-[28px] sm:text-[34px] font-black text-[#111827] tracking-tight leading-normal">
+            Welcome back, <span className="text-indigo-600">{displayName}</span>
           </h1>
           <p className="text-[14px] text-gray-500 mt-1 font-medium">
             Metro District 04 Civic Pulse is <span className="font-bold text-indigo-600">Active & Monitored</span>. 2 ongoing field dispatches near your registered zone.

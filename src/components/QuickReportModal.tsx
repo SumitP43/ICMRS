@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CivicComplaint } from '../types';
 import { X, Send, MapPin, Camera, Sparkles, CheckCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface QuickReportModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export const QuickReportModal: React.FC<QuickReportModalProps> = ({
   onClose,
   onSubmit
 }) => {
+  const { currentUser } = useAuth();
   const [category, setCategory] = useState('Pothole / Road Surface Damage');
   const [location, setLocation] = useState('Near 4402 Oak Ave Crossway');
   const [description, setDescription] = useState(
@@ -60,7 +62,9 @@ export const QuickReportModal: React.FC<QuickReportModalProps> = ({
         slaStatus: 'nominal',
         imageUrl: photoSelected || undefined,
         gpsTagged: true,
-        citizenToken: 'CT-88942-X',
+        citizenToken: currentUser?.badgeNumber || 'CT-88942-X',
+        userId: currentUser?.id,
+        userEmail: currentUser?.email,
         officerNotes: [
           {
             id: `note-${Date.now()}`,

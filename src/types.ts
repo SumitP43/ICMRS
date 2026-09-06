@@ -16,6 +16,14 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface RegisterCredentials {
+  name: string;
+  email: string;
+  password: string;
+  wardOrSector?: string;
+  phone?: string;
+}
+
 export interface AuthResponse {
   success: boolean;
   token?: string;
@@ -82,6 +90,15 @@ export interface CivicComplaint {
   rating?: number;
   priority: 'Critical' | 'High' | 'Medium' | 'Low';
   citizenToken: string;
+  userId?: string;
+  userEmail?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  citizenFeedback?: {
+    rating: number;
+    comment?: string;
+    submittedAt: string;
+  };
 }
 
 export interface CivicAlert {

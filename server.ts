@@ -99,6 +99,100 @@ async function startServer() {
   // AUTHENTICATION APIs
   // ==========================================
 
+  // POST /api/auth/register - Register a new citizen account
+  app.post("/api/auth/register", (req, res) => {
+    try {
+      const { name, email, password, wardOrSector } = req.body || {};
+
+      if (!name || typeof name !== "string" || name.trim().length < 2) {
+        return res.status(400).json({
+          success: false,
+          error: "Full name is required (minimum 2 characters).",
+        });
+      }
+
+      if (!email || typeof email !== "string" || !email.includes("@")) {
+        return res.status(400).json({
+          success: false,
+          error: "A valid email address is required.",
+        });
+      }
+
+      if (!password || typeof password !== "string" || password.length < 6) {
+        return res.status(400).json({
+          success: false,
+          error: "Password must be at least 6 characters.",
+        });
+      }
+
+      const normalizedEmail = email.trim().toLowerCase();
+      const existingUser = USERS_DB.find((u) => u.email.toLowerCase() === normalizedEmail);
+
+      if (existingUser) {
+        return res.status(409).json({
+          success: false,
+          error: "An account with this email address already exists. Please log in instead.",
+        });
+      }
+
+      const salt = generateSalt();
+      const passwordHash = hashPassword(password, salt);
+      const tokenNumber = Math.floor(10000 + Math.random() * 90000);
+      const newUserId = `usr-citizen-${Date.now()}`;
+      const departmentName = wardOrSector && typeof wardOrSector === "string" && wardOrSector.trim()
+        ? wardOrSector.trim()
+        : "District 04 Resident";
+
+      // Select avatar
+      const avatarList = [
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80"
+      ];
+      const selectedAvatar = avatarList[Math.floor(Math.random() * avatarList.length)];
+
+      const newCitizen: ServerUser = {
+        id: newUserId,
+        email: normalizedEmail,
+        passwordHash,
+        salt,
+        name: name.trim(),
+        role: "citizen",
+        badgeNumber: `CT-${tokenNumber}-X`,
+        department: departmentName,
+        avatar: selectedAvatar,
+      };
+
+      USERS_DB.push(newCitizen);
+
+      // Issue active session token immediately
+      const token = `icmrs_sess_${crypto.randomBytes(32).toString("hex")}`;
+      const now = Date.now();
+      const expiresAt = now + 24 * 60 * 60 * 1000;
+
+      SESSIONS_DB.set(token, {
+        token,
+        userId: newCitizen.id,
+        createdAt: now,
+        expiresAt,
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: "Citizen account registered successfully.",
+        token,
+        user: sanitizeUser(newCitizen),
+      });
+    } catch (err) {
+      console.error("Registration server error:", err);
+      return res.status(500).json({
+        success: false,
+        error: "Internal server error during citizen registration.",
+      });
+    }
+  });
+
   // POST /api/auth/login - Validate credentials and return session token
   app.post("/api/auth/login", (req, res) => {
     try {

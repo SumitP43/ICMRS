@@ -13,6 +13,7 @@ import {
   Info
 } from 'lucide-react';
 import { GoogleLocationPicker } from './GoogleLocationPicker';
+import { useAuth } from '../context/AuthContext';
 
 interface FileComplaintViewProps {
   onSubmitComplaint: (complaint: CivicComplaint) => void;
@@ -23,6 +24,7 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
   onSubmitComplaint,
   onNavigateToTrack
 }) => {
+  const { currentUser } = useAuth();
   const [category, setCategory] = useState('Roads & Bridges');
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('');
@@ -149,7 +151,9 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
       imageUrl: photoUrl,
       gpsTagged: true,
       priority: priority,
-      citizenToken: 'CT-88942-X',
+      citizenToken: currentUser?.badgeNumber || 'CT-88942-X',
+      userId: currentUser?.id,
+      userEmail: currentUser?.email,
       officerNotes: [
         {
           id: `n-${Date.now()}`,
