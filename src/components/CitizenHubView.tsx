@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CivicComplaint, CivicAlert, EmergencyHotline, FAQItem } from '../types';
-import { Star, ChevronDown, ChevronUp, AlertCircle, Phone, MapPin, Sparkles, Flame, Radio } from 'lucide-react';
+import { Star, ChevronDown, ChevronUp, AlertCircle, Phone, MapPin, Sparkles, Flame, Radio, X, CheckCircle, Zap, ArrowRight, BarChart3, ShieldCheck, Bot, Mic } from 'lucide-react';
 import { CivicLeafletMap } from './CivicLeafletMap';
 import { useAuth } from '../context/AuthContext';
+
+export type MetricFilterType = 'all' | 'active' | 'resolved' | 'sla';
 
 interface CitizenHubViewProps {
   complaints: CivicComplaint[];
@@ -13,7 +15,7 @@ interface CitizenHubViewProps {
   onSelectComplaint: (complaint: CivicComplaint) => void;
   onOpenOfficerNotes: (complaint: CivicComplaint) => void;
   onOpenUploadPhoto: (complaint: CivicComplaint) => void;
-  onOpenCivicChat: () => void;
+  onOpenCivicChat: (initialQuery?: string) => void;
   onNavigateToTab: (tab: any) => void;
   onEscalatePriority: (complaintId: string) => void;
   onRateIncident: (complaintId: string, rating: number) => void;
@@ -38,11 +40,63 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
   const [selectedPin, setSelectedPin] = useState<string | null>(null);
   const [emergencyAlertDialed, setEmergencyAlertDialed] = useState<string | null>(null);
 
+  // Metric filter state for the 4 interactive telemetry buttons
+  const [activeMetricFilter, setActiveMetricFilter] = useState<MetricFilterType>('all');
+  const [isSlaModalOpen, setIsSlaModalOpen] = useState<boolean>(false);
+
   const displayName = currentUser?.name || 'Marcus Vance';
   const citizenToken = currentUser?.badgeNumber || 'CT-88942-X';
 
-  const activeComplaints = complaints.filter(c => c.status !== 'Resolved');
-  const resolvedComplaints = complaints.filter(c => c.status === 'Resolved');
+  // Live dynamic telemetry calculated directly from real complaints data
+  const totalCount = complaints.length;
+  const activeComplaints = useMemo(() => complaints.filter(c => c.status !== 'Resolved'), [complaints]);
+  const resolvedComplaints = useMemo(() => complaints.filter(c => c.status === 'Resolved'), [complaints]);
+  const urgentSlaComplaints = useMemo(
+    () => complaints.filter(c => c.slaStatus === 'urgent' || c.priority === 'Critical'),
+    [complaints]
+  );
+
+  const resolutionRate = useMemo(() => {
+    if (totalCount === 0) return '100.0';
+    return ((resolvedComplaints.length / totalCount) * 100).toFixed(1);
+  }, [totalCount, resolvedComplaints.length]);
+
+  const calculatedAvgSla = useMemo(() => {
+    if (complaints.length === 0) return '18.4';
+    const sum = complaints.reduce((acc, c) => acc + (c.totalSlaHours || 18.4), 0);
+    return (sum / complaints.length).toFixed(1);
+  }, [complaints]);
+
+  // Complaints dataset displayed in the primary queue based on the active button filter
+  const displayedComplaints = useMemo(() => {
+    switch (activeMetricFilter) {
+      case 'active':
+        return activeComplaints;
+      case 'resolved':
+        return resolvedComplaints;
+      case 'sla':
+        return urgentSlaComplaints.length > 0
+          ? urgentSlaComplaints
+          : [...complaints].sort((a, b) => (b.totalSlaHours || 0) - (a.totalSlaHours || 0));
+      case 'all':
+      default:
+        return complaints;
+    }
+  }, [activeMetricFilter, complaints, activeComplaints, resolvedComplaints, urgentSlaComplaints]);
+
+  const handleMetricClick = (filter: MetricFilterType) => {
+    setActiveMetricFilter(filter);
+    if (filter === 'sla') {
+      setIsSlaModalOpen(true);
+    } else {
+      // Smooth scroll down to the targeted section
+      const targetId = filter === 'resolved' ? 'citizen-resolved-feed' : 'citizen-complaints-feed';
+      const targetElement = document.getElementById(targetId) || document.getElementById('citizen-complaints-feed');
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
 
   const toggleFaq = (id: string) => {
     setOpenFaqId(prev => (prev === id ? null : id));
@@ -76,17 +130,30 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
         </div>
 
         {/* Quick Operational Action Buttons */}
-        <div className="flex items-center gap-3 self-start lg:self-center">
+        <div className="flex flex-wrap items-center gap-3 self-start lg:self-center">
           <button 
+            id="hero-talk-to-assistant-btn"
             type="button"
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-[#111827] text-[12px] font-bold hover:bg-gray-50 transition-colors shadow-sm"
+            onClick={() => onOpenCivicChat()}
+            className="flex items-center gap-2.5 px-4 sm:px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[12px] sm:text-[13px] font-extrabold shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer group"
+            title="Talk to Civic Voice Assistant about any problem"
           >
-            <span className="material-symbols-outlined text-[18px] text-indigo-600">verified_user</span>
-            <span>Verified Voter ID Active</span>
+            <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Mic className="w-3.5 h-3.5 text-white" />
+            </div>
+            <span>Talk to AI Assistant</span>
+            <span className="hidden sm:inline-block px-1.5 py-0.5 bg-indigo-500/60 rounded-md text-[9px] font-mono uppercase tracking-wider">Voice</span>
           </button>
           <button 
             type="button"
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-[#111827] text-[12px] font-bold hover:bg-gray-50 transition-colors shadow-sm"
+            className="flex items-center gap-2 px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-[#111827] text-[12px] font-bold hover:bg-gray-50 transition-colors shadow-sm"
+          >
+            <span className="material-symbols-outlined text-[18px] text-indigo-600">verified_user</span>
+            <span>Verified Citizen</span>
+          </button>
+          <button 
+            type="button"
+            className="flex items-center gap-2 px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-[#111827] text-[12px] font-bold hover:bg-gray-50 transition-colors shadow-sm"
           >
             <span className="material-symbols-outlined text-[18px] text-indigo-600">share_location</span>
             <span>Oak Ridge Sector</span>
@@ -94,93 +161,191 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
         </div>
       </div>
 
-      {/* Live Bento Telemetry Grid */}
+      {/* Live Telemetry Grid - Interactive Working Metric Buttons */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-        {/* Bento Stat 1 - Total Filed */}
-        <div className="bg-white rounded-[28px] sm:rounded-[32px] p-7 border border-gray-200 shadow-sm flex flex-col justify-between hover:border-indigo-200 transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Total Filed</span>
-            <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-bold">
+        {/* Metric Button 1 - Total Filed */}
+        <button
+          id="metric-btn-total-filed"
+          type="button"
+          onClick={() => handleMetricClick('all')}
+          className={`text-left w-full rounded-[28px] sm:rounded-[32px] p-7 border shadow-sm flex flex-col justify-between transition-all duration-200 cursor-pointer group hover:-translate-y-1 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+            activeMetricFilter === 'all'
+              ? 'bg-white border-indigo-500 ring-2 ring-indigo-500 shadow-indigo-100'
+              : 'bg-white border-gray-200 hover:border-indigo-300'
+          }`}
+          aria-label={`Total filed: ${totalCount} civic cases. Click to view all cases.`}
+          title="Click to view all filed complaints in the district queue"
+        >
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Total Filed</span>
+              {activeMetricFilter === 'all' && (
+                <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[9px] font-extrabold tracking-wider uppercase">
+                  Active
+                </span>
+              )}
+            </div>
+            <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-bold transition-transform group-hover:scale-105">
               <span className="material-symbols-outlined text-[20px]">assignment</span>
             </div>
           </div>
           <div className="mt-4">
             <div className="flex items-baseline gap-2">
-              <span className="font-['Plus_Jakarta_Sans'] text-[44px] text-[#111827] font-extrabold leading-none">14</span>
+              <span className="font-['Plus_Jakarta_Sans'] text-[44px] text-[#111827] font-extrabold leading-none">
+                {totalCount}
+              </span>
               <span className="text-[11px] text-indigo-600 font-bold uppercase tracking-wider">Civic Cases</span>
             </div>
-            <div className="mt-3 flex items-center gap-1.5 text-gray-500 text-[12px]">
-              <span className="material-symbols-outlined text-indigo-600 text-[15px]">history</span>
-              <span>Logged since Jan 2025</span>
+            <div className="mt-3 flex items-center justify-between text-gray-500 text-[12px]">
+              <div className="flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-indigo-600 text-[15px]">history</span>
+                <span>Logged since Jan 2025</span>
+              </div>
+              <span className="text-[11px] font-bold text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                Filter &rarr;
+              </span>
             </div>
           </div>
-        </div>
+        </button>
 
-        {/* Bento Stat 2 - Dark Performance Card with Frequency Bars */}
-        <div className="bg-[#111827] rounded-[28px] sm:rounded-[32px] p-7 text-white shadow-xl flex flex-col justify-between border border-gray-800 relative overflow-hidden">
-          <div className="flex items-center justify-between z-10">
-            <span className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold">Active Investigations</span>
-            <span className="bg-green-400/20 text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-green-400/30">
+        {/* Metric Button 2 - Dark Performance Card with Frequency Bars (Active Investigations) */}
+        <button
+          id="metric-btn-active-investigations"
+          type="button"
+          onClick={() => handleMetricClick('active')}
+          className={`text-left w-full bg-[#111827] rounded-[28px] sm:rounded-[32px] p-7 text-white shadow-xl flex flex-col justify-between border relative overflow-hidden transition-all duration-200 cursor-pointer group hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${
+            activeMetricFilter === 'active'
+              ? 'border-indigo-400 ring-2 ring-indigo-400 shadow-indigo-900/50'
+              : 'border-gray-800 hover:border-gray-700'
+          }`}
+          aria-label={`Active investigations: ${activeComplaints.length} crews remediating. Click to filter active cases.`}
+          title="Click to filter active cases under field remediation"
+        >
+          <div className="flex items-center justify-between z-10 w-full">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold">Active Investigations</span>
+              {activeMetricFilter === 'active' && (
+                <span className="px-2 py-0.5 rounded-full bg-indigo-500/30 text-indigo-300 text-[9px] font-extrabold tracking-wider uppercase border border-indigo-400/40">
+                  Active
+                </span>
+              )}
+            </div>
+            <span className="bg-green-400/20 text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-green-400/30 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
               Live On-Site
             </span>
           </div>
-          <div className="mt-4 z-10 flex items-end justify-between">
+          <div className="mt-4 z-10 flex items-end justify-between w-full">
             <div>
-              <div className="font-['Plus_Jakarta_Sans'] text-[44px] text-white font-light leading-none">02</div>
-              <div className="text-[11px] text-gray-400 mt-1 font-medium">Crews remediating</div>
+              <div className="font-['Plus_Jakarta_Sans'] text-[44px] text-white font-light leading-none">
+                {String(activeComplaints.length).padStart(2, '0')}
+              </div>
+              <div className="text-[11px] text-gray-400 mt-1 font-medium">
+                {activeComplaints.length === 1 ? '1 crew remediating' : `${activeComplaints.length} crews remediating`}
+              </div>
             </div>
             {/* Visualizer bars from Bento theme */}
             <div className="flex items-end gap-1.5 h-12 w-28">
               <div className="w-full h-1/3 bg-gray-800 rounded-sm"></div>
               <div className="w-full h-2/3 bg-gray-800 rounded-sm"></div>
               <div className="w-full h-1/2 bg-gray-800 rounded-sm"></div>
-              <div className="w-full h-full bg-indigo-500 rounded-sm shadow-[0_0_12px_rgba(99,102,241,0.6)]"></div>
+              <div className="w-full h-full bg-indigo-500 rounded-sm shadow-[0_0_12px_rgba(99,102,241,0.6)] animate-pulse"></div>
               <div className="w-full h-3/4 bg-gray-800 rounded-sm"></div>
               <div className="w-full h-1/2 bg-gray-800 rounded-sm"></div>
             </div>
           </div>
           <div className="absolute inset-0 opacity-10 pointer-events-none bento-dot-grid"></div>
-        </div>
+        </button>
 
-        {/* Bento Stat 3 - Resolved Cases */}
-        <div className="bg-white rounded-[28px] sm:rounded-[32px] p-7 border border-gray-200 shadow-sm flex flex-col justify-between hover:border-indigo-200 transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Resolved Cases</span>
-            <div className="w-10 h-10 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center font-bold">
+        {/* Metric Button 3 - Resolved Cases */}
+        <button
+          id="metric-btn-resolved-cases"
+          type="button"
+          onClick={() => handleMetricClick('resolved')}
+          className={`text-left w-full rounded-[28px] sm:rounded-[32px] p-7 border shadow-sm flex flex-col justify-between transition-all duration-200 cursor-pointer group hover:-translate-y-1 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+            activeMetricFilter === 'resolved'
+              ? 'bg-white border-green-500 ring-2 ring-green-500 shadow-green-100'
+              : 'bg-white border-gray-200 hover:border-green-200'
+          }`}
+          aria-label={`Resolved cases: ${resolvedComplaints.length} certified. Click to filter resolved cases.`}
+          title="Click to view certified resolved incidents with before/after proof"
+        >
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Resolved Cases</span>
+              {activeMetricFilter === 'resolved' && (
+                <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[9px] font-extrabold tracking-wider uppercase">
+                  Active
+                </span>
+              )}
+            </div>
+            <div className="w-10 h-10 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center font-bold transition-transform group-hover:scale-105">
               <span className="material-symbols-outlined text-[20px]">task_alt</span>
             </div>
           </div>
           <div className="mt-4">
             <div className="flex items-baseline gap-2">
-              <span className="font-['Plus_Jakarta_Sans'] text-[44px] text-[#111827] font-extrabold leading-none">12</span>
+              <span className="font-['Plus_Jakarta_Sans'] text-[44px] text-[#111827] font-extrabold leading-none">
+                {String(resolvedComplaints.length).padStart(2, '0')}
+              </span>
               <span className="text-[11px] text-green-600 font-bold uppercase tracking-wider">Certified</span>
             </div>
-            <div className="mt-3 flex items-center gap-1.5 text-gray-500 text-[12px]">
-              <span className="text-green-600 font-bold">85.7%</span>
-              <span>Quarterly resolution rate</span>
+            <div className="mt-3 flex items-center justify-between text-[12px]">
+              <div className="flex items-center gap-1.5 text-gray-500">
+                <span className="text-green-600 font-bold">{resolutionRate}%</span>
+                <span>Quarterly resolution rate</span>
+              </div>
+              <span className="text-[11px] font-bold text-green-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                Filter &rarr;
+              </span>
             </div>
           </div>
-        </div>
+        </button>
 
-        {/* Bento Stat 4 - Speed Index / SLA Response */}
-        <div className="bg-white rounded-[28px] sm:rounded-[32px] p-7 border border-gray-200 shadow-sm flex flex-col justify-between hover:border-indigo-200 transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Avg SLA Response</span>
-            <div className="w-10 h-10 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 font-bold text-lg">
+        {/* Metric Button 4 - Speed Index / SLA Response */}
+        <button
+          id="metric-btn-avg-sla-response"
+          type="button"
+          onClick={() => handleMetricClick('sla')}
+          className={`text-left w-full rounded-[28px] sm:rounded-[32px] p-7 border shadow-sm flex flex-col justify-between transition-all duration-200 cursor-pointer group hover:-translate-y-1 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
+            activeMetricFilter === 'sla'
+              ? 'bg-white border-amber-500 ring-2 ring-amber-500 shadow-amber-100'
+              : 'bg-white border-gray-200 hover:border-amber-200'
+          }`}
+          aria-label={`Average SLA response: ${calculatedAvgSla} hours. Click to inspect district SLA metrics.`}
+          title="Click to inspect average SLA response and urgent SLA cases"
+        >
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Avg SLA Response</span>
+              {activeMetricFilter === 'sla' && (
+                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[9px] font-extrabold tracking-wider uppercase">
+                  Active
+                </span>
+              )}
+            </div>
+            <div className="w-10 h-10 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 font-bold text-lg transition-transform group-hover:scale-105">
               ⚡
             </div>
           </div>
           <div className="mt-4">
             <div className="flex items-baseline gap-2">
-              <span className="font-['Plus_Jakarta_Sans'] text-[44px] text-[#111827] font-extrabold leading-none">18.4</span>
+              <span className="font-['Plus_Jakarta_Sans'] text-[44px] text-[#111827] font-extrabold leading-none">
+                {calculatedAvgSla}
+              </span>
               <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Hours</span>
             </div>
-            <div className="mt-3 flex items-center gap-1.5 text-green-600 text-[12px] font-bold">
-              <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-[10px]">4.2h faster</span>
-              <span className="text-gray-500 font-normal">than district SLA cap</span>
+            <div className="mt-3 flex items-center justify-between text-[12px]">
+              <div className="flex items-center gap-1.5 text-green-600 font-bold">
+                <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-[10px]">4.2h faster</span>
+                <span className="text-gray-500 font-normal">than district SLA cap</span>
+              </div>
+              <span className="text-[11px] font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                Telemetry &rarr;
+              </span>
             </div>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Primary Action Bento Hero Strip */}
@@ -231,30 +396,91 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
         {/* Main Content Column: Active Complaints + Recently Resolved Cards */}
         <div className="xl:col-span-8 flex flex-col gap-10">
           
-          {/* Section 1: Active Complaints Under Investigation */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
+          {/* Section 1: Complaints Feed & Milestone Telemetry */}
+          <div id="citizen-complaints-feed" className="scroll-mt-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-bold">
-                  <span className="material-symbols-outlined text-[20px]">troubleshoot</span>
+                  <span className="material-symbols-outlined text-[20px]">
+                    {activeMetricFilter === 'resolved' ? 'task_alt' : activeMetricFilter === 'sla' ? 'timer' : 'troubleshoot'}
+                  </span>
                 </div>
                 <div>
                   <h3 className="font-['Plus_Jakarta_Sans'] text-[20px] text-[#111827] font-extrabold">
-                    Active Complaints
+                    {activeMetricFilter === 'all' && 'All Registered Complaints'}
+                    {activeMetricFilter === 'active' && 'Active Complaints Under Remediation'}
+                    {activeMetricFilter === 'resolved' && 'Resolved Civic Incidents'}
+                    {activeMetricFilter === 'sla' && 'Urgent SLA Response Queue'}
                   </h3>
                   <p className="text-[12px] text-gray-500 font-medium">
-                    Real-time telemetry and dispatch milestones for your open civic tickets
+                    {activeMetricFilter === 'all' && 'Full historical ledger of municipal reports filed across your ward'}
+                    {activeMetricFilter === 'active' && 'Real-time telemetry and dispatch milestones for open civic tickets'}
+                    {activeMetricFilter === 'resolved' && 'Verified closed tickets with inspector certification records'}
+                    {activeMetricFilter === 'sla' && 'Incidents with critical deadlines or escalated SLA targets'}
                   </p>
                 </div>
               </div>
-              <span className="bento-badge-indigo">
-                {activeComplaints.length} Open Investigations
-              </span>
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <span className="bento-badge-indigo">
+                  {displayedComplaints.length} {displayedComplaints.length === 1 ? 'Incident' : 'Incidents'}
+                </span>
+                {activeMetricFilter !== 'all' && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveMetricFilter('all')}
+                    className="text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1 rounded-full transition-colors flex items-center gap-1 cursor-pointer"
+                    title="Reset to all complaints"
+                  >
+                    <span>Reset Filter</span>
+                    <span className="material-symbols-outlined text-[13px]">restart_alt</span>
+                  </button>
+                )}
+              </div>
             </div>
+
+            {/* Filter Pill Banner */}
+            {activeMetricFilter !== 'all' && (
+              <div className="mb-4 px-4 py-2.5 rounded-2xl bg-indigo-50/70 border border-indigo-100 flex items-center justify-between text-[12px]">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
+                  <span className="font-bold text-indigo-950">
+                    Filtered by: <span className="font-extrabold capitalize">{activeMetricFilter === 'sla' ? 'Urgent SLA Response' : activeMetricFilter}</span>
+                  </span>
+                  <span className="text-gray-500 text-[11px]">({displayedComplaints.length} tickets matching)</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveMetricFilter('all')}
+                  className="text-indigo-600 hover:text-indigo-800 font-bold hover:underline cursor-pointer"
+                >
+                  Show all {totalCount} cases &rarr;
+                </button>
+              </div>
+            )}
 
             {/* Cards Stack */}
             <div className="flex flex-col gap-5">
-              {activeComplaints.map(ticket => (
+              {displayedComplaints.length === 0 ? (
+                <div className="bg-white rounded-[28px] sm:rounded-[32px] p-10 text-center border border-gray-200 shadow-sm flex flex-col items-center justify-center">
+                  <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-3">
+                    <span className="material-symbols-outlined text-[28px]">search_off</span>
+                  </div>
+                  <h4 className="font-['Plus_Jakarta_Sans'] text-[18px] font-extrabold text-[#111827] mb-1">
+                    No matching incidents found
+                  </h4>
+                  <p className="text-[13px] text-gray-500 mb-4 max-w-md font-medium">
+                    There are currently no tickets matching the "{activeMetricFilter}" criteria.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveMetricFilter('all')}
+                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[12px] font-bold rounded-xl transition-all shadow-sm cursor-pointer"
+                  >
+                    View All {totalCount} Complaints
+                  </button>
+                </div>
+              ) : (
+                displayedComplaints.map(ticket => (
                 <div 
                   key={ticket.id}
                   className="bg-white rounded-[28px] sm:rounded-[32px] p-6 sm:p-8 shadow-sm hover:shadow-md transition-all border border-gray-200 flex flex-col"
@@ -420,12 +646,12 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
                     </button>
                   </div>
                 </div>
-              ))}
+              )))}
             </div>
           </div>
 
           {/* Section 2: Recently Resolved Complaints with Before & After Proof */}
-          <div>
+          <div id="citizen-resolved-feed">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center font-bold">
@@ -444,7 +670,7 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
                 onClick={() => onNavigateToTab('resolution-and-feedback')}
                 className="text-[12px] text-indigo-600 font-bold hover:underline"
               >
-                View All 12 History →
+                View All {resolvedComplaints.length} History →
               </button>
             </div>
 
@@ -590,6 +816,87 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
         {/* Right Column: Sidebar Feeds, Hotlines & Citizen FAQs */}
         <div className="xl:col-span-4 flex flex-col gap-6">
           
+          {/* Feature: Speak & Ask Your Problem Civic AI Assistant Widget */}
+          <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-indigo-950 rounded-[28px] sm:rounded-[32px] p-6 sm:p-7 text-white shadow-xl border border-indigo-700/60 relative overflow-hidden">
+            <div className="flex items-center justify-between pb-3.5 mb-3 border-b border-indigo-700/50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 bg-indigo-500/30 text-indigo-200 rounded-2xl flex items-center justify-center font-bold border border-indigo-400/30 shadow-inner">
+                  <Bot className="w-5 h-5 text-indigo-200" />
+                </div>
+                <div>
+                  <h4 className="font-['Plus_Jakarta_Sans'] text-[17px] text-white font-extrabold flex items-center gap-1.5">
+                    Ask Your Problem
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  </h4>
+                  <p className="text-[11px] text-indigo-200 font-medium">Gemini Voice & Municipal Triage</p>
+                </div>
+              </div>
+              <span className="bg-emerald-400/20 text-emerald-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-400/30 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                Voice Active
+              </span>
+            </div>
+
+            <p className="text-[12px] text-indigo-100 leading-relaxed mb-4">
+              Have a problem on your street? Speak directly or chat with District 04's AI to get immediate assistance, check live repair milestones, or report municipal hazards.
+            </p>
+
+            {/* Fast Voice Call-to-action */}
+            <button
+              id="sidebar-start-talking-btn"
+              type="button"
+              onClick={() => onOpenCivicChat()}
+              className="w-full py-3 px-4 bg-white hover:bg-indigo-50 text-indigo-950 rounded-2xl font-black text-[13px] flex items-center justify-between transition-all shadow-md active:scale-98 cursor-pointer group mb-3.5"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-xl bg-indigo-600 text-white flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Mic className="w-4 h-4" />
+                </div>
+                <span className="font-['Plus_Jakarta_Sans']">Start Talking With Assistant</span>
+              </div>
+              <ArrowRight className="w-4 h-4 text-indigo-600" />
+            </button>
+
+            {/* Quick problem tags */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[10px] text-indigo-300 uppercase tracking-wider font-bold">Tap to Ask Common Problems:</span>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onOpenCivicChat('Report a severe pothole damaging vehicles on my street')}
+                  className="text-left px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[11px] text-indigo-100 font-medium transition-colors truncate cursor-pointer"
+                  title="Report a severe pothole"
+                >
+                  🕳️ Road Pothole
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenCivicChat('Water main leaking and flooding the sidewalk in Ward 04')}
+                  className="text-left px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[11px] text-indigo-100 font-medium transition-colors truncate cursor-pointer"
+                  title="Water main leak"
+                >
+                  💧 Water Leak
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenCivicChat('Street light fixture outage making crosswalk dark at night')}
+                  className="text-left px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[11px] text-indigo-100 font-medium transition-colors truncate cursor-pointer"
+                  title="Street light outage"
+                >
+                  💡 Dark Streetlight
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenCivicChat('Check status of my active complaint tickets in District 04')}
+                  className="text-left px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[11px] text-indigo-100 font-medium transition-colors truncate cursor-pointer"
+                  title="Track ticket status"
+                >
+                  📋 Track My Tickets
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Widget 1: Real-Time Municipal Alerts Feed */}
           <div className="bg-white rounded-[28px] sm:rounded-[32px] p-6 sm:p-7 shadow-sm border border-gray-200">
             <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-gray-100">
@@ -738,6 +1045,170 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* SLA Telemetry & Response Intelligence Modal */}
+      {isSlaModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="sla-modal-title"
+        >
+          <div className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl border border-gray-200 overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="px-6 py-5 bg-gradient-to-r from-amber-500 via-amber-600 to-indigo-700 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-bold text-xl">
+                  ⚡
+                </div>
+                <div>
+                  <h3 id="sla-modal-title" className="font-['Plus_Jakarta_Sans'] text-[18px] font-extrabold leading-tight">
+                    District SLA Telemetry & Response
+                  </h3>
+                  <p className="text-[12px] text-amber-100 font-medium">
+                    Metro District 04 Civic Operational Benchmarks
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSlaModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="Close modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-6">
+              {/* Top 4 KPI metric cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-amber-50/70 border border-amber-200/70 rounded-2xl p-3.5 text-center">
+                  <div className="text-[10px] uppercase font-bold tracking-wider text-amber-800">Turnaround</div>
+                  <div className="text-[22px] font-black text-amber-950 mt-0.5">{calculatedAvgSla}h</div>
+                  <div className="text-[10px] text-amber-700 font-medium">Cap: 24.0h</div>
+                </div>
+
+                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 text-center">
+                  <div className="text-[10px] uppercase font-bold tracking-wider text-emerald-800">Delta</div>
+                  <div className="text-[22px] font-black text-emerald-950 mt-0.5">-4.2h</div>
+                  <div className="text-[10px] text-emerald-700 font-medium">Faster than cap</div>
+                </div>
+
+                <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-3.5 text-center">
+                  <div className="text-[10px] uppercase font-bold tracking-wider text-indigo-800">Resolution</div>
+                  <div className="text-[22px] font-black text-indigo-950 mt-0.5">{resolutionRate}%</div>
+                  <div className="text-[10px] text-indigo-700 font-medium">Certified done</div>
+                </div>
+
+                <div className="bg-rose-50 border border-rose-200 rounded-2xl p-3.5 text-center">
+                  <div className="text-[10px] uppercase font-bold tracking-wider text-rose-800">Urgent SLA</div>
+                  <div className="text-[22px] font-black text-rose-950 mt-0.5">{urgentSlaComplaints.length}</div>
+                  <div className="text-[10px] text-rose-700 font-medium">Escalated tickets</div>
+                </div>
+              </div>
+
+              {/* Department Response Velocities */}
+              <div>
+                <h4 className="text-[13px] font-extrabold text-[#111827] uppercase tracking-wider mb-3">
+                  Department Turnaround Velocities
+                </h4>
+                <div className="space-y-2.5">
+                  <div className="bg-gray-50 p-3.5 rounded-2xl border border-gray-200/80 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">💧</span>
+                      <div>
+                        <div className="text-[13px] font-bold text-gray-900">Water, Sewer & Hydrology</div>
+                        <div className="text-[11px] text-gray-500">Pipeline pressure & burst mains</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[13px] font-extrabold text-indigo-600">8.2 hrs avg</span>
+                      <div className="text-[10px] font-semibold text-emerald-600">98.2% on-time</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 p-3.5 rounded-2xl border border-gray-200/80 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">🛣️</span>
+                      <div>
+                        <div className="text-[13px] font-bold text-gray-900">Roadways & Pothole Remediation</div>
+                        <div className="text-[11px] text-gray-500">Asphalt patching & road debris</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[13px] font-extrabold text-indigo-600">16.4 hrs avg</span>
+                      <div className="text-[10px] font-semibold text-emerald-600">94.5% on-time</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 p-3.5 rounded-2xl border border-gray-200/80 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">💡</span>
+                      <div>
+                        <div className="text-[13px] font-bold text-gray-900">Public Lighting & Electrical Grid</div>
+                        <div className="text-[11px] text-gray-500">Lamppost outages & traffic signals</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[13px] font-extrabold text-indigo-600">18.0 hrs avg</span>
+                      <div className="text-[10px] font-semibold text-emerald-600">96.0% on-time</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 p-3.5 rounded-2xl border border-gray-200/80 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">🌳</span>
+                      <div>
+                        <div className="text-[13px] font-bold text-gray-900">Parks, Trees & Environmental</div>
+                        <div className="text-[11px] text-gray-500">Storm limb hazards & public greens</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[13px] font-extrabold text-indigo-600">21.5 hrs avg</span>
+                      <div className="text-[10px] font-semibold text-emerald-600">92.8% on-time</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Note */}
+              <div className="p-3.5 rounded-2xl bg-indigo-50/60 border border-indigo-100 flex items-start gap-2.5">
+                <ShieldCheck className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+                <p className="text-[12px] text-indigo-950 leading-relaxed">
+                  Citizens who report incidents via the mobile photo sensor trigger automated geofenced routing directly to the closest active municipal crew truck, reducing SLA response times by an average of 4.2 hours.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSlaModalOpen(false);
+                  const targetElement = document.getElementById('citizen-complaints-feed');
+                  if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }}
+                className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[13px] font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+              >
+                <span>Filter Urgent SLA Tickets ({urgentSlaComplaints.length})</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsSlaModalOpen(false)}
+                className="w-full sm:w-auto px-4 py-2.5 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl text-[13px] font-bold text-gray-700 transition-colors cursor-pointer"
+              >
+                Close Telemetry
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

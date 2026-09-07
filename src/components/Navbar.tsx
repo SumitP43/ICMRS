@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CivicRole, NavigationTab, CivicComplaint } from '../types';
 import { 
   Search, 
@@ -11,9 +11,11 @@ import {
   ChevronDown,
   LogOut,
   User,
-  Briefcase
+  Briefcase,
+  Mic
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { isMuted, toggleMuted, subscribeMuteChange } from '../audio/audioNotificationService';
 
 interface NavbarProps {
   currentRole: CivicRole;
@@ -26,6 +28,7 @@ interface NavbarProps {
   onSelectComplaint: (complaint: CivicComplaint) => void;
   unreadAlertCount: number;
   onOpenQuickReport: () => void;
+  onOpenCivicChat?: () => void;
   onLogout?: () => void;
 }
 
@@ -40,6 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectComplaint,
   unreadAlertCount,
   onOpenQuickReport,
+  onOpenCivicChat,
   onLogout
 }) => {
   const { currentUser, signInWithGoogle, logout } = useAuth();
@@ -47,6 +51,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [audioMuted, setAudioMuted] = useState<boolean>(isMuted());
+
+  useEffect(() => {
+    const unsubscribe = subscribeMuteChange((muted) => {
+      setAudioMuted(muted);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const filteredSearchResults = searchQuery.trim() === '' 
     ? [] 
@@ -186,7 +198,24 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Role Identity & Profile Controls */}
-        <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-max">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-max">
+          {/* Quick Voice & AI Chat trigger */}
+          {onOpenCivicChat && (
+            <button
+              id="topbar-talk-ai-btn"
+              type="button"
+              onClick={onOpenCivicChat}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-indigo-50 border border-indigo-200/80 text-indigo-700 text-[12px] font-extrabold hover:bg-indigo-100 hover:border-indigo-300 active:scale-95 transition-all shadow-2xs cursor-pointer group"
+              title="Talk or ask Gemini Civic AI Assistant"
+            >
+              <span className="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Mic className="w-2.5 h-2.5" />
+              </span>
+              <span className="hidden sm:inline">Talk to AI</span>
+              <span className="sm:hidden">AI</span>
+            </button>
+          )}
+
           {/* Fast Quick Report trigger on top bar */}
           {(effectiveRole === 'citizen' || effectiveRole === 'admin') && (
             <button
@@ -196,6 +225,28 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <span className="material-symbols-outlined text-[16px]">add_circle</span>
               <span>Report</span>
+            </button>
+          )}
+
+          {/* Admin & Officer Audio Notification Status Widget */}
+          {(effectiveRole === 'admin' || effectiveRole === 'officer') && (
+            <button
+              id="topbar-audio-status-widget-btn"
+              type="button"
+              onClick={() => {
+                const next = toggleMuted();
+                setAudioMuted(next);
+              }}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-bold transition-all active:scale-95 cursor-pointer ${
+                audioMuted
+                  ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
+                  : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+              }`}
+              title={audioMuted ? "Admin audio alerts are muted. Click to enable." : "Admin audio alerts are active. Click to mute."}
+              aria-label={audioMuted ? "Audio Muted" : "Audio On"}
+            >
+              <span className="text-[13px]">{audioMuted ? '🔇' : '🔊'}</span>
+              <span className="font-mono tracking-tight">{audioMuted ? 'Audio Muted' : 'Audio On'}</span>
             </button>
           )}
 

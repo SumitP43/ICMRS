@@ -6,16 +6,27 @@ import {
   Clock, 
   Users, 
   Layers, 
-  ArrowDownRight,
-  ArrowUpRight,
-  CheckCircle,
-  FileSpreadsheet,
-  Calendar,
-  Activity,
-  Filter,
-  Sparkles,
-  Download
+  ArrowDownRight, 
+  ArrowUpRight, 
+  CheckCircle, 
+  FileSpreadsheet, 
+  Calendar, 
+  Activity, 
+  Filter, 
+  Sparkles, 
+  Download,
+  Volume2,
+  VolumeX,
+  Bell,
+  AlertTriangle
 } from 'lucide-react';
+import { 
+  isMuted, 
+  toggleMuted, 
+  subscribeMuteChange, 
+  playNewComplaintChime, 
+  playCriticalEscalationChime 
+} from '../audio/audioNotificationService';
 import {
   ResponsiveContainer,
   LineChart,
@@ -47,6 +58,27 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ complain
   const [complaints, setComplaints] = useState<CivicComplaint[]>(propComplaints || []);
   const [showPriorityBreakdown, setShowPriorityBreakdown] = useState<boolean>(false);
   const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
+  const [audioMuted, setAudioMuted] = useState<boolean>(isMuted());
+  const [testFeedback, setTestFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = subscribeMuteChange((muted) => {
+      setAudioMuted(muted);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleTestNewComplaint = () => {
+    playNewComplaintChime(true);
+    setTestFeedback('New Complaint Chime (F#5 → A5 Double-Harmonic) played');
+    setTimeout(() => setTestFeedback(null), 3500);
+  };
+
+  const handleTestCriticalEscalation = () => {
+    playCriticalEscalationChime(true);
+    setTestFeedback('Critical Escalation Alert (E5 → G#5 → B5 Ascending) played');
+    setTimeout(() => setTestFeedback(null), 3500);
+  };
 
   // Fetch latest complaints from backend if not provided in props
   useEffect(() => {
@@ -330,6 +362,26 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ complain
         </div>
 
         <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
+          {/* Admin Portal Audio Status Widget */}
+          <button 
+            id="admin-portal-audio-status-btn"
+            type="button"
+            onClick={() => {
+              const next = toggleMuted();
+              setAudioMuted(next);
+            }}
+            className={`px-4 py-2.5 rounded-xl text-[13px] font-bold flex items-center gap-2 border shadow-sm transition-all active:scale-95 cursor-pointer ${
+              audioMuted
+                ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
+                : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+            }`}
+            title={audioMuted ? "Admin incident audio alerts are muted. Click to turn audio ON." : "Admin incident audio alerts are ON. Click to mute."}
+            aria-label={audioMuted ? "Audio Muted" : "Audio On"}
+          >
+            <span className="text-[15px]">{audioMuted ? '🔇' : '🔊'}</span>
+            <span>{audioMuted ? 'Audio Muted' : 'Audio On'}</span>
+          </button>
+
           {/* Download Aggregated CSV Button */}
           <button 
             id="download-aggregated-dataset-csv-btn"
@@ -407,6 +459,90 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ complain
             <span className="text-[12px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-md">Under Budget</span>
           </div>
           <p className="text-[12px] text-gray-400 mt-1.5 font-medium">AI predictive route savings</p>
+        </div>
+      </div>
+
+      {/* Admin Portal Civic Incident Audio Notification System & Test Bench */}
+      <div className="bg-white p-6 sm:p-7 rounded-[28px] border border-gray-200 shadow-sm mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 pb-5 border-b border-gray-100">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                <Volume2 className="w-3.5 h-3.5 text-indigo-600" />
+                Browser-Native Web Audio
+              </span>
+              <span className="text-[11px] font-mono text-gray-400">• Zero External Libraries • Offline Synthesizer</span>
+            </div>
+            <h2 className="font-['Plus_Jakarta_Sans'] text-[20px] font-black text-[#111827] tracking-tight">
+              Incident Audio Alert Notifications & Sound Test Bench
+            </h2>
+            <p className="text-[13px] text-gray-500 mt-0.5 max-w-2xl font-medium">
+              Subtle synthesized browser chimes notifying triage officers when new municipal complaints arrive or existing issues escalate to Critical priority.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Status Indicator & Quick Toggle */}
+            <div className={`px-3.5 py-2 rounded-xl border text-[12px] font-bold flex items-center gap-2 ${
+              audioMuted 
+                ? 'bg-amber-50 text-amber-900 border-amber-200' 
+                : 'bg-emerald-50 text-emerald-900 border-emerald-200'
+            }`}>
+              <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: audioMuted ? '#f59e0b' : '#10b981' }}></span>
+              <span>Status: {audioMuted ? 'Muted' : 'Active'}</span>
+            </div>
+
+            <button
+              id="admin-sound-toggle-action-btn"
+              type="button"
+              onClick={() => {
+                const next = toggleMuted();
+                setAudioMuted(next);
+              }}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#111827] text-[12px] font-bold rounded-xl transition-all cursor-pointer"
+            >
+              {audioMuted ? 'Unmute All Alerts' : 'Mute All Alerts'}
+            </button>
+          </div>
+        </div>
+
+        {/* Action Buttons & Feedback Banner */}
+        <div className="pt-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              id="test-new-complaint-audio-btn"
+              type="button"
+              onClick={handleTestNewComplaint}
+              className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-[13px] font-bold rounded-xl shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+              title="Test the double-harmonic New Complaint chime (F#5 → A5)"
+            >
+              <Bell className="w-4 h-4" />
+              <span>Test New Complaint</span>
+            </button>
+
+            <button
+              id="test-critical-escalation-audio-btn"
+              type="button"
+              onClick={handleTestCriticalEscalation}
+              className="px-4 py-2.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white text-[13px] font-bold rounded-xl shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+              title="Test the 3-tone Critical Escalation alert (E5 → G#5 → B5)"
+            >
+              <AlertTriangle className="w-4 h-4" />
+              <span>Test Critical Escalation</span>
+            </button>
+          </div>
+
+          {/* Real-time Feedback State Banner */}
+          {testFeedback ? (
+            <div className="px-3.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[12px] font-bold flex items-center gap-2 animate-in fade-in">
+              <CheckCircle className="w-4 h-4 text-emerald-600" />
+              <span>{testFeedback}</span>
+            </div>
+          ) : (
+            <div className="text-[11px] text-gray-400 flex items-center gap-2 font-mono">
+              <span>Acoustic Spec: F#5 (739.99Hz) • A5 (880Hz) | E5 (659Hz) → G#5 (830Hz) → B5 (987Hz)</span>
+            </div>
+          )}
         </div>
       </div>
 

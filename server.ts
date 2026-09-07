@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import crypto from "crypto";
+import { GoogleGenAI } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 import { INITIAL_COMPLAINTS } from "./src/data/mockData";
 import { CivicComplaint } from "./src/types";
@@ -384,6 +385,209 @@ async function startServer() {
     }
     complaints[index] = updated;
     res.json({ success: true, data: updated });
+  });
+
+  // ==========================================
+  // GEMINI CIVIC AI CHATBOT API
+  // ==========================================
+  let genAIClient: GoogleGenAI | null = null;
+  function getGenAI(): GoogleGenAI | null {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return null;
+    }
+    if (!genAIClient) {
+      genAIClient = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            "User-Agent": "aistudio-build",
+          },
+        },
+      });
+    }
+    return genAIClient;
+  }
+
+  // POST /api/chat - Multi-turn conversational civic assistant
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const { 
+        messages, 
+        model = "gemini-3.5-flash", 
+        roleType = "general",
+        userContext,
+        complaintsContext 
+      } = req.body || {};
+
+      if (!Array.isArray(messages) || messages.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: "Messages array is required for conversation turn.",
+        });
+      }
+
+      // Validate and determine model according to project guidelines:
+      // gemini-3.1-pro-preview for complex tasks, gemini-3.5-flash for general tasks, gemini-3.1-flash-lite for fast tasks
+      const allowedModels = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.1-pro-preview"];
+      
+      let selectedModel = "gemini-3.5-flash";
+      let effectiveRole = roleType || "general";
+
+      // If model is "auto" or not directly an allowed model, apply intelligent automatic classification
+      if (!model || model === "auto" || !allowedModels.includes(model)) {
+        const lastUserText = messages
+          .filter((m: any) => m.role === "user")
+          .slice(-1)[0]?.text?.toLowerCase() || "";
+
+        const isComplex = lastUserText.includes("code") || 
+          lastUserText.includes("ordinance") || 
+          lastUserText.includes("engineering") || 
+          lastUserText.includes("specification") || 
+          lastUserText.includes("compliance") || 
+          lastUserText.includes("statute") ||
+          lastUserText.includes("bituminous") ||
+          lastUserText.includes("structural") ||
+          lastUserText.length > 250;
+
+        const isFast = lastUserText.includes("hotline") || 
+          lastUserText.includes("emergency number") || 
+          lastUserText.includes("phone") || 
+          lastUserText.includes("quick") || 
+          lastUserText.includes("fast") ||
+          (lastUserText.length < 30 && !isComplex);
+
+        if (isComplex) {
+          selectedModel = "gemini-3.1-pro-preview";
+          effectiveRole = "expert";
+        } else if (isFast) {
+          selectedModel = "gemini-3.1-flash-lite";
+          effectiveRole = "fast";
+        } else {
+          selectedModel = "gemini-3.5-flash";
+          effectiveRole = "general";
+        }
+      } else {
+        selectedModel = model;
+      }
+
+      // Build context of current active tickets in the city if available
+      const activeTicketsSummary = (complaintsContext && Array.isArray(complaintsContext) ? complaintsContext : complaints)
+        .slice(0, 8)
+        .map((c: any) => `- Ticket ${c.id}: "${c.title}" at ${c.location} | Status: ${c.status} (${c.pipelineStepName || c.status}) | SLA: ${c.slaRemaining || 'Standard 24h'} | Priority: ${c.priority || 'Medium'}`)
+        .join("\n");
+
+      // Construct rich municipal assistant system instructions
+      let roleInstructions = "";
+      if (effectiveRole === "fast") {
+        roleInstructions = "You are in Quick-Response mode. Give snappy, high-speed, direct answers (1-2 sentences maximum) prioritizing emergency hotlines, ticket IDs, or actionable steps.";
+      } else if (effectiveRole === "expert") {
+        roleInstructions = "You are in Senior Municipal Engineering & Compliance Specialist mode. Provide in-depth technical diagnostics (e.g. asphalt bituminous binder specs, hydraulic pressure thresholds, electrical conduit standards, municipal code citations §14-B) alongside procedural civic remedies.";
+      } else {
+        roleInstructions = "You are in General Civic Triage mode. Guide the citizen warmly and professionally through reporting their problem, explaining SLA expectations, and checking active municipal work orders.";
+      }
+
+      const citizenName = userContext?.name || "Citizen";
+      const citizenWard = userContext?.ward || "Metro District 04";
+
+      const systemInstruction = `You are the Metro District 04 Intelligent Civic Response System (ICMRS) Virtual Officer.
+Current Citizen: ${citizenName} (${citizenWard}).
+${roleInstructions}
+
+District 04 Municipal Context:
+- Active Municipal Tickets in Ward:
+${activeTicketsSummary}
+- Emergency Escalation Hotlines (24/7 Crew Dispatch):
+  • Water / Gas Mains Burst: 311-990
+  • Fallen Electrical Lines / Power Arcing: 311-881
+  • Sewer Surge & Hazardous Spills: 311-885
+- Standard Turnaround SLAs:
+  • Water, Sewer & Hydrology: ~8.2 hours
+  • Roadways & Asphalt Potholes: ~16.4 hours
+  • Public Lighting & Traffic Signals: ~18.0 hours
+  • Forestry, Storm Debris & Trees: ~21.5 hours
+
+Instructions:
+1. When a citizen talks or asks about a problem (e.g., potholes, unlit lampposts, water leaks, illegal dumping, broken curb, traffic signals, sidewalk cracks), listen attentively, acknowledge the hazard, diagnose its urgency, and provide immediate clarity.
+2. If their query refers to a specific street or ticket in Ward 04 (e.g., Oak Ave pothole #001245 or Elmwood streetlight #001198), cite the actual status from the District 04 tickets above.
+3. If they want to file a new problem or report a hazard, summarize what details are needed (exact street location, photo evidence, description) and instruct them to use the "File a Complaint" wizard.
+4. Maintain a warm, encouraging, respectful public servant tone. Keep answers structured and easily readable on mobile devices.
+5. If the situation presents immediate life or bodily danger (live wires, gas smell, massive water sinkhole), prominently emphasize calling 911 or the direct emergency hotlines first.`;
+
+      // Filter and sanitize conversation contents for Gemini
+      // Contents must have { role: 'user' | 'model', parts: [{ text: string }] }
+      // Gemini expects the first message in contents to be from 'user'.
+      const rawContents = messages
+        .filter((m: any) => m && typeof m.text === "string" && m.text.trim().length > 0)
+        .map((m: any) => ({
+          role: m.role === "bot" || m.role === "model" ? "model" : "user",
+          parts: [{ text: m.text.trim() }],
+        }));
+
+      // Find index of first 'user' message
+      const firstUserIndex = rawContents.findIndex((c: any) => c.role === "user");
+      const sanitizedContents = firstUserIndex !== -1 ? rawContents.slice(firstUserIndex) : rawContents;
+
+      if (sanitizedContents.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: "At least one user message is required in the conversation history.",
+        });
+      }
+
+      const ai = getGenAI();
+
+      if (!ai) {
+        // Fallback simulation if GEMINI_API_KEY is not configured yet
+        const lastUserMessage = sanitizedContents[sanitizedContents.length - 1]?.parts[0]?.text || "";
+        const lower = lastUserMessage.toLowerCase();
+        let fallbackText = `Thank you for reaching out to Metro District 04 Civic Response, ${citizenName}. `;
+        
+        if (lower.includes("pothole") || lower.includes("road") || lower.includes("oak")) {
+          fallbackText += `Regarding road hazards: Ticket #ICMRS-2026-001245 on Oak Ave is currently active at Step 3: Asphalt Crew Deployed. Crew 09 is on site. Standard turnaround SLA for roadway repair is 16.4 hours. You can file a new road defect with photo verification anytime!`;
+        } else if (lower.includes("light") || lower.includes("dark") || lower.includes("lamp")) {
+          fallbackText += `Regarding public lighting: Luminaire outages are triaged within 18.0 hours. Power node #SL-402 on Elmwood is currently de-energized for public safety while crews install solid-state drivers.`;
+        } else if (lower.includes("water") || lower.includes("leak") || lower.includes("pipe")) {
+          fallbackText += `Regarding water & hydrology: For severe main breaks, call our 24/7 hotline at 311-990. Hydrology dispatch crews achieve an 8.2-hour average response time across District 04.`;
+        } else if (lower.includes("emergency") || lower.includes("wire") || lower.includes("danger")) {
+          fallbackText += `URGENT NOTICE: For downed wires or life hazards, dial 311-881 immediately. Stand back at least 30 feet from any fallen cables.`;
+        } else {
+          fallbackText += `I have registered your inquiry. Our municipal dispatch network continuously tracks civic maintenance across Ward 04. Would you like to file a new complaint, check existing ticket milestones, or speak with an on-duty supervisor?`;
+        }
+
+        return res.json({
+          success: true,
+          text: fallbackText,
+          model: selectedModel,
+          isFallback: true,
+        });
+      }
+
+      // Call Gemini API server-side
+      const response = await ai.models.generateContent({
+        model: selectedModel,
+        contents: sanitizedContents,
+        config: {
+          systemInstruction,
+          temperature: 0.7,
+        },
+      });
+
+      const responseText = response.text || "Thank you for contacting Metro District 04 Civic Response. Your report has been acknowledged by municipal triage.";
+
+      return res.json({
+        success: true,
+        text: responseText,
+        model: selectedModel,
+      });
+    } catch (err: any) {
+      console.error("Gemini Chat API Error:", err);
+      return res.status(500).json({
+        success: false,
+        error: err?.message || "An error occurred while contacting the Gemini civic assistant service.",
+        text: "I apologize, but our municipal AI dispatch is momentarily reconnecting to the telemetry server. You can still report emergencies directly via 311-990 or use the manual complaint filing wizard.",
+      });
+    }
   });
 
   // Health check endpoint

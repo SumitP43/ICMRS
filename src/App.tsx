@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { RefreshCw, Bell, AlertCircle, Volume2, X } from 'lucide-react';
+import { RefreshCw, Bell, AlertCircle, Volume2, X, Mic, Bot } from 'lucide-react';
 import { 
   CivicRole, 
   NavTab, 
@@ -25,8 +25,8 @@ import {
 } from './services/complaintService';
 import { 
   playNewComplaintChime, 
-  playEscalationChime 
-} from './utils/soundEffects';
+  playCriticalEscalationChime 
+} from './audio/audioNotificationService';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Navbar } from './components/Navbar';
@@ -88,7 +88,7 @@ function hashToTab(hash: string): NavTab | null {
 }
 
 function ICMRSApplication() {
-  const { currentUser, userRole, isAuthenticated, loading, logout } = useAuth();
+  const { currentUser, userRole, isAuthenticated, loading, logout, isOfficer, isAdmin } = useAuth();
 
   const [currentTab, setCurrentTab] = useState<NavTab>('citizen-hub');
   const [searchQuery, setSearchQuery] = useState('');
@@ -96,11 +96,35 @@ function ICMRSApplication() {
   const [alerts, setAlerts] = useState(INITIAL_ALERTS);
   const [selectedComplaint, setSelectedComplaint] = useState<CivicComplaint>(INITIAL_COMPLAINTS[0]);
 
+  // Admin Portal & Officer Audio & Visual Incident Notification Toast state
+  interface AdminIncidentToast {
+    id: string;
+    type: 'new' | 'escalation';
+    complaintId: string;
+    complaintTitle: string;
+    priority?: string;
+    timestamp: number;
+  }
+  const [incidentToast, setIncidentToast] = useState<AdminIncidentToast | null>(null);
+  const initialSnapshotLoadedRef = useRef(false);
+  const knownComplaintIdsRef = useRef<Set<string>>(new Set(INITIAL_COMPLAINTS.map(c => c.id)));
+  const knownComplaintPrioritiesRef = useRef<Map<string, string>>(new Map(INITIAL_COMPLAINTS.map(c => [c.id, c.priority])));
+
+  // Auto-dismiss incident toast after 5 seconds
+  useEffect(() => {
+    if (!incidentToast) return;
+    const timer = setTimeout(() => {
+      setIncidentToast(null);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [incidentToast]);
+
   // Modal states
   const [isQuickReportOpen, setIsQuickReportOpen] = useState(false);
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const [isUploadPhotoModalOpen, setIsUploadPhotoModalOpen] = useState(false);
   const [isCivicChatOpen, setIsCivicChatOpen] = useState(false);
+  const [civicChatInitialQuery, setCivicChatInitialQuery] = useState('');
   const [modalTargetComplaint, setModalTargetComplaint] = useState<CivicComplaint | null>(null);
 
   // Sync tab with URL Hash & Hash Change listener for URL-based manual route testing
@@ -158,12 +182,67 @@ function ICMRSApplication() {
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(new Date());
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
+  // Audio & Toast notification clearance check
+  const shouldNotify = Boolean(
+    isAdmin ||
+    isOfficer ||
+    userRole === 'admin' ||
+    userRole === 'officer' ||
+    currentTab === 'admin-analytics' ||
+    currentTab === 'officer-console'
+  );
+
   // Real-time local & server subscription for complaints
   useEffect(() => {
     setIsSyncing(true);
     const unsubscribe = subscribeComplaints(
       (freshComplaints) => {
         if (freshComplaints && freshComplaints.length > 0) {
+          // If this is after initial snapshot load, inspect for new or escalated incidents
+          if (initialSnapshotLoadedRef.current) {
+            // 1. Detect newly filed complaints
+            const newlyArrived = freshComplaints.filter(c => !knownComplaintIdsRef.current.has(c.id));
+            if (newlyArrived.length > 0 && shouldNotify) {
+              playNewComplaintChime();
+              const latest = newlyArrived[0];
+              setIncidentToast({
+                id: `toast-${Date.now()}`,
+                type: 'new',
+                complaintId: latest.id,
+                complaintTitle: latest.title,
+                priority: latest.priority,
+                timestamp: Date.now()
+              });
+            }
+
+            // 2. Detect priority escalations on existing complaints:
+            // Must ONLY trigger when an existing complaint transitions to CRITICAL.
+            // LOW -> CRITICAL, MEDIUM -> CRITICAL, HIGH -> CRITICAL.
+            // (CRITICAL -> CRITICAL: DO NOT play again. LOW -> MEDIUM: do not play.)
+            const newlyEscalated = freshComplaints.find(c => {
+              const oldPriority = knownComplaintPrioritiesRef.current.get(c.id);
+              return oldPriority && oldPriority !== 'Critical' && c.priority === 'Critical';
+            });
+            if (newlyEscalated && shouldNotify) {
+              playCriticalEscalationChime();
+              setIncidentToast({
+                id: `toast-${Date.now()}`,
+                type: 'escalation',
+                complaintId: newlyEscalated.id,
+                complaintTitle: newlyEscalated.title,
+                priority: 'CRITICAL',
+                timestamp: Date.now()
+              });
+            }
+          }
+
+          // Update tracking refs
+          freshComplaints.forEach(c => {
+            knownComplaintIdsRef.current.add(c.id);
+            knownComplaintPrioritiesRef.current.set(c.id, c.priority);
+          });
+          initialSnapshotLoadedRef.current = true;
+
           setComplaints(freshComplaints);
           setLastSyncedAt(new Date());
 
@@ -182,7 +261,7 @@ function ICMRSApplication() {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [shouldNotify]);
 
   // On-demand sync trigger
   const handleSyncNow = useCallback(() => {
@@ -217,6 +296,21 @@ function ICMRSApplication() {
     // Optimistic UI update
     setComplaints(prev => [newComplaint, ...prev]);
     setSelectedComplaint(newComplaint);
+
+    // Play subtle chime on new complaint creation
+    if (shouldNotify) {
+      playNewComplaintChime();
+      setIncidentToast({
+        id: `toast-${Date.now()}`,
+        type: 'new',
+        complaintId: newComplaint.id,
+        complaintTitle: newComplaint.title,
+        priority: newComplaint.priority,
+        timestamp: Date.now()
+      });
+    }
+    knownComplaintIdsRef.current.add(newComplaint.id);
+    knownComplaintPrioritiesRef.current.set(newComplaint.id, newComplaint.priority);
 
     try {
       await saveComplaint(newComplaint, {
@@ -298,6 +392,25 @@ function ICMRSApplication() {
   };
 
   const handleEscalatePriority = async (complaintId: string) => {
+    const target = complaints.find(c => c.id === complaintId);
+    const prevPriority = knownComplaintPrioritiesRef.current.get(complaintId);
+
+    // Escalation chime triggers ONLY when transitioning from non-critical to Critical
+    if (prevPriority !== 'Critical') {
+      if (shouldNotify) {
+        playCriticalEscalationChime();
+        setIncidentToast({
+          id: `toast-${Date.now()}`,
+          type: 'escalation',
+          complaintId: complaintId,
+          complaintTitle: target?.title || 'Civic Infrastructure Incident',
+          priority: 'CRITICAL',
+          timestamp: Date.now()
+        });
+      }
+    }
+    knownComplaintPrioritiesRef.current.set(complaintId, 'Critical');
+
     const escalationNote: OfficerNote = {
       id: `n-${Date.now()}`,
       author: currentUser?.name || 'System Dispatch',
@@ -306,7 +419,6 @@ function ICMRSApplication() {
       text: 'Priority escalated to Critical via Citizen Portal. Priority dispatch alerted.'
     };
 
-    const target = complaints.find(c => c.id === complaintId);
     const updatedNotes = target ? [...target.officerNotes, escalationNote] : [escalationNote];
     const updates: Partial<CivicComplaint> = {
       priority: 'Critical',
@@ -416,12 +528,16 @@ function ICMRSApplication() {
         }}
         unreadAlertCount={alerts.length}
         onOpenQuickReport={() => setIsQuickReportOpen(true)}
+        onOpenCivicChat={() => {
+          setCivicChatInitialQuery('');
+          setIsCivicChatOpen(true);
+        }}
       />
 
       {/* Main Screen Body based on Selected Nav Tab */}
       <main className="flex-1 pt-4 sm:pt-6">
-        {/* Polling Telemetry Indicator for Officer & Admin Views */}
-        {(currentTab === 'officer-console' || currentTab === 'admin-analytics') && (
+        {/* Live Dispatch Telemetry Indicator for Officer Console */}
+        {currentTab === 'officer-console' && (
           <div className="w-full max-w-[100rem] mx-auto px-4 sm:px-6 pt-1 pb-4">
             <div className="bg-white border border-gray-200/80 rounded-2xl px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-[12px] shadow-2xs">
               <div className="flex items-center gap-2.5">
@@ -434,7 +550,7 @@ function ICMRSApplication() {
                 </span>
                 <span className="text-gray-300 hidden sm:inline">•</span>
                 <span className="text-gray-500 hidden sm:inline">
-                  Polling backend every <strong className="text-indigo-600 font-bold">60s</strong> to keep Officer and Admin views synchronized
+                  Real-time municipal dispatch stream active
                 </span>
               </div>
 
@@ -477,7 +593,10 @@ function ICMRSApplication() {
               }}
               onOpenOfficerNotes={handleOpenOfficerNotes}
               onOpenUploadPhoto={handleOpenUploadPhoto}
-              onOpenCivicChat={() => setIsCivicChatOpen(true)}
+              onOpenCivicChat={(query?: string) => {
+                setCivicChatInitialQuery(query || '');
+                setIsCivicChatOpen(true);
+              }}
               onNavigateToTab={handleTabChange}
               onEscalatePriority={handleEscalatePriority}
               onRateIncident={handleRateIncident}
@@ -680,14 +799,133 @@ function ICMRSApplication() {
 
       <CivicChatModal
         isOpen={isCivicChatOpen}
-        onClose={() => setIsCivicChatOpen(false)}
+        onClose={() => {
+          setIsCivicChatOpen(false);
+          setCivicChatInitialQuery('');
+        }}
         complaints={complaints}
         onSelectComplaint={(c) => {
           setSelectedComplaint(c);
           handleTabChange('track-status');
         }}
         onNavigateToFile={() => handleTabChange('file-complaint')}
+        user={currentUser}
+        initialProblemQuery={civicChatInitialQuery}
       />
+
+      {/* Floating Action Button: Talk & Ask Problem with Civic AI */}
+      <aside 
+        id="floating-talk-assistant-container"
+        className="fixed bottom-6 right-6 z-40"
+        aria-label="Civic AI Voice Assistant Quick Access"
+      >
+        <button
+          id="floating-talk-civic-assistant-btn"
+          type="button"
+          onClick={() => {
+            setCivicChatInitialQuery('');
+            setIsCivicChatOpen(true);
+          }}
+          className="flex items-center gap-2.5 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-2xl hover:shadow-indigo-500/30 border-2 border-white/80 transition-all duration-200 cursor-pointer active:scale-95 group"
+          title="Talk to Civic Voice and AI Assistant"
+          aria-label="Talk to Civic Voice and AI Assistant"
+        >
+          <span className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white shadow-inner group-hover:scale-110 transition-transform">
+            <Mic className="w-4 h-4 text-white" />
+          </span>
+          <div className="flex flex-col text-left pr-1">
+            <span className="text-[13px] font-extrabold leading-tight">Talk & Ask Problem</span>
+            <span className="text-[10px] text-indigo-200 font-medium">Gemini AI Assistant</span>
+          </div>
+        </button>
+      </aside>
+
+      {/* Admin Portal Incident Notification Floating Toast */}
+      {incidentToast && shouldNotify && (
+        <aside 
+          id="admin-incident-floating-toast"
+          role="status"
+          aria-live="polite"
+          aria-label={incidentToast.type === 'escalation' ? 'Critical Escalation Alert' : 'New Complaint Alert'}
+          className={`fixed bottom-6 right-6 z-50 max-w-sm w-[calc(100vw-3rem)] sm:w-96 bg-white rounded-2xl border shadow-2xl p-4.5 transition-all duration-300 animate-in slide-in-from-bottom-5 ${
+            incidentToast.type === 'escalation'
+              ? 'border-red-300 shadow-red-500/10'
+              : 'border-indigo-200 shadow-indigo-500/10'
+          }`}
+        >
+          {/* Header row with Icon, Label, and Dismiss Button */}
+          <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <span className="text-[17px] leading-none">
+                {incidentToast.type === 'escalation' ? '⚠' : '🔔'}
+              </span>
+              <span className={`text-[13px] font-black tracking-tight ${
+                incidentToast.type === 'escalation' ? 'text-red-700' : 'text-indigo-700'
+              }`}>
+                {incidentToast.type === 'escalation' ? 'Critical Escalation' : 'New Complaint'}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              id="dismiss-admin-incident-toast-btn"
+              onClick={() => setIncidentToast(null)}
+              className="text-gray-400 hover:text-gray-700 cursor-pointer p-1 rounded-lg hover:bg-gray-100 transition-colors"
+              title="Dismiss alert"
+              aria-label="Dismiss alert"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Incident Details Card Content */}
+          <div className="pt-2.5 space-y-1.5">
+            <div className="font-mono text-[12px] font-extrabold text-[#111827] tracking-wide">
+              {incidentToast.complaintId}
+            </div>
+
+            <p className="text-[13px] text-gray-800 font-semibold leading-snug line-clamp-2">
+              {incidentToast.complaintTitle}
+            </p>
+
+            {incidentToast.type === 'escalation' && (
+              <div className="pt-0.5">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-red-50 text-red-700 border border-red-200 text-[11px] font-black uppercase font-mono tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>
+                  Priority: CRITICAL
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Inspect Complaint Action Button */}
+          <div className="mt-3.5 pt-2.5 border-t border-gray-100 flex items-center justify-between">
+            <button
+              type="button"
+              id="inspect-toast-complaint-btn"
+              onClick={() => {
+                const target = complaints.find(c => c.id === incidentToast.complaintId);
+                if (target) {
+                  setSelectedComplaint(target);
+                  handleTabChange('track-status');
+                }
+                setIncidentToast(null);
+              }}
+              className={`px-4 py-2 rounded-xl text-[12px] font-bold flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer text-white ${
+                incidentToast.type === 'escalation'
+                  ? 'bg-red-600 hover:bg-red-700'
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+              }`}
+            >
+              <span>Inspect Complaint →</span>
+            </button>
+
+            <span className="text-[10px] text-gray-400 font-mono">
+              Auto-dismiss 5s
+            </span>
+          </div>
+        </aside>
+      )}
     </div>
   );
 }

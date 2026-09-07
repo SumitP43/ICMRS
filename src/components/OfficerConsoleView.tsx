@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CivicComplaint, OfficerNote } from '../types';
 import { 
   ShieldCheck, 
@@ -17,11 +17,12 @@ import {
   Bell
 } from 'lucide-react';
 import { 
+  isMuted, 
+  toggleMuted, 
+  subscribeMuteChange, 
   playNewComplaintChime, 
-  playEscalationChime, 
-  isOfficerSoundEnabled, 
-  setOfficerSoundEnabled 
-} from '../utils/soundEffects';
+  playCriticalEscalationChime 
+} from '../audio/audioNotificationService';
 
 interface OfficerConsoleViewProps {
   complaints: CivicComplaint[];
@@ -40,24 +41,30 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
   const [filterStatus, setFilterStatus] = useState<string>('Active');
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [broadcastSent, setBroadcastSent] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(isOfficerSoundEnabled());
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(!isMuted());
   const [chimePlaying, setChimePlaying] = useState<string | null>(null);
 
+  useEffect(() => {
+    const unsubscribe = subscribeMuteChange((muted) => {
+      setSoundEnabled(!muted);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const handleToggleSound = () => {
-    const nextState = !soundEnabled;
-    setSoundEnabled(nextState);
-    setOfficerSoundEnabled(nextState);
-    if (nextState) {
-      playNewComplaintChime();
+    const nextMuted = toggleMuted();
+    setSoundEnabled(!nextMuted);
+    if (!nextMuted) {
+      playNewComplaintChime(true);
     }
   };
 
   const handleTestChime = (type: 'new' | 'escalation') => {
     setChimePlaying(type);
     if (type === 'new') {
-      playNewComplaintChime();
+      playNewComplaintChime(true);
     } else {
-      playEscalationChime();
+      playCriticalEscalationChime(true);
     }
     setTimeout(() => setChimePlaying(null), 800);
   };
