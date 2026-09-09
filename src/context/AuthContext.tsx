@@ -139,8 +139,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: 'Marcus Vance',
         email: credentials.email,
         role: 'citizen',
-        badgeNumber: 'CT-88942-X',
-        department: 'District 04 Resident',
+        badgeNumber: 'Verified Resident',
+        department: 'Delhi NCT Resident',
         avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
       };
     }
@@ -190,14 +190,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       console.warn('[Auth] Registration network notice, falling back to local creation:', err);
       // Client-side fallback if server temporarily unreachable
-      const tokenNumber = Math.floor(10000 + Math.random() * 90000);
       const fallbackUser: AuthUser = {
         id: `usr-citizen-${Date.now()}`,
         name: credentials.name.trim(),
         email: credentials.email.trim().toLowerCase(),
         role: 'citizen',
-        badgeNumber: `CT-${tokenNumber}-X`,
-        department: credentials.wardOrSector || 'District 04 Resident',
+        badgeNumber: 'Verified Resident',
+        department: credentials.wardOrSector || 'Delhi NCT Resident',
         avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
       };
 

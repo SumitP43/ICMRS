@@ -12,7 +12,7 @@ import {
   Upload,
   Info
 } from 'lucide-react';
-import { GoogleLocationPicker } from './GoogleLocationPicker';
+import { CivicLocationPicker } from './CivicLocationPicker';
 import { useAuth } from '../context/AuthContext';
 
 interface FileComplaintViewProps {
@@ -28,7 +28,7 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
   const [category, setCategory] = useState('Roads & Bridges');
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('');
-  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number }>({ lat: 47.6097, lng: -122.3331 });
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number }>({ lat: 28.6315, lng: 77.2167 });
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<'Critical' | 'High' | 'Medium' | 'Low'>('High');
   const [isLocating, setIsLocating] = useState(false);
@@ -81,9 +81,9 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
       (err) => {
         setIsLocating(false);
         console.warn('GPS location error:', err);
-        setLocError('Could not acquire GPS fix. Set to Seattle Ward 04 default.');
-        setCoordinates({ lat: 47.6097, lng: -122.3331 });
-        setLocation('Corner Oak Ave & 14th St. (Ward 04)');
+        setLocError('Could not acquire GPS fix. Set to Delhi Central default.');
+        setCoordinates({ lat: 28.6315, lng: 77.2167 });
+        setLocation('Outer Circle, Connaught Place (New Delhi 110001)');
       },
       {
         enableHighAccuracy: true,
@@ -106,12 +106,12 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
   const [submittedTicket, setSubmittedTicket] = useState<CivicComplaint | null>(null);
 
   const categories = [
-    { name: 'Roads & Bridges', icon: 'traffic', count: '14 Active in Ward 04' },
-    { name: 'Electrical & Lighting', icon: 'electric_bolt', count: '8 Active in Ward 04' },
-    { name: 'Water & Sanitation', icon: 'water_damage', count: '5 Active in Ward 04' },
-    { name: 'Public Safety & Transit', icon: 'fmd_bad', count: '3 Active in Ward 04' },
-    { name: 'Parks & Forestry', icon: 'park', count: '7 Active in Ward 04' },
-    { name: 'Waste Management', icon: 'recycling', count: '4 Active in Ward 04' },
+    { name: 'Roads & Bridges', icon: 'traffic', count: '14 Active in Delhi' },
+    { name: 'Electrical & Lighting', icon: 'electric_bolt', count: '8 Active in Delhi' },
+    { name: 'Water & Sanitation', icon: 'water_damage', count: '5 Active in Delhi' },
+    { name: 'Public Safety & Transit', icon: 'fmd_bad', count: '3 Active in Delhi' },
+    { name: 'Parks & Forestry', icon: 'park', count: '7 Active in Delhi' },
+    { name: 'Waste Management', icon: 'recycling', count: '4 Active in Delhi' },
   ];
 
   const handleSimulateAiAnalysis = () => {
@@ -134,16 +134,16 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
 
     const newTicket: CivicComplaint = {
       id: newId,
-      title: title || `${category} Hazard at ${location || 'Ward 04'}`,
+      title: title || `${category} Hazard at ${location || 'Delhi NCT'}`,
       description: description || 'Citizen reported public infrastructure issue requiring municipal inspection.',
       category: category,
-      location: location || 'Oak Ridge Sector Crossway',
+      location: location || 'Connaught Place, New Delhi',
       coordinates: coordinates,
       status: 'In Progress',
       pipelineStep: 1,
       pipelineStepName: 'Step 1 of 5: Telemetry Received & Dispatched',
       pipelinePercent: 20,
-      assignedCrew: aiAnalysisResult?.crewType || 'District 04 Rapid Unit',
+      assignedCrew: aiAnalysisResult?.crewType || 'Delhi Municipal Rapid Unit',
       timeLogged: 'Just now',
       slaRemaining: priority === 'Critical' ? '4h 00m SLA remaining' : '24h 00m SLA remaining',
       totalSlaHours: priority === 'Critical' ? 4 : 24,
@@ -151,14 +151,14 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
       imageUrl: photoUrl,
       gpsTagged: true,
       priority: priority,
-      citizenToken: currentUser?.badgeNumber || 'CT-88942-X',
+      citizenToken: currentUser?.badgeNumber || 'Verified Resident',
       userId: currentUser?.id,
       userEmail: currentUser?.email,
       officerNotes: [
         {
           id: `n-${Date.now()}`,
           author: 'Elena Vance',
-          role: 'Ward Officer 04',
+          role: 'Chief Field Auditor (Central Delhi)',
           time: 'Just now',
           text: 'Ticket ingested into municipal dispatch. Auto-routing active.'
         }
@@ -178,13 +178,13 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
             <span className="w-2 h-2 rounded-full bg-indigo-600 animate-ping"></span>
             Automated Civic Dispatch
           </span>
-          <span className="text-gray-400 text-[11px] font-mono uppercase tracking-wider">• Ward 04 Telemetry Protocol</span>
+          <span className="text-gray-400 text-[11px] font-mono uppercase tracking-wider">• Delhi NCT Telemetry Protocol</span>
         </div>
         <h1 className="font-['Plus_Jakarta_Sans'] text-[32px] font-black text-[#111827] tracking-tight">
           File a Municipal Civic Complaint
         </h1>
         <p className="text-[14px] text-gray-500 mt-1 max-w-2xl font-medium">
-          Report municipal defects, infrastructure hazards, and municipal service interruptions directly to assigned District 04 response units.
+          Report municipal defects, infrastructure hazards, and municipal service interruptions directly to assigned Delhi municipal response units.
         </p>
       </div>
 
@@ -353,7 +353,7 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
                 )}
 
                 {/* Interactive Pin Locator with OpenStreetMap & Live Location */}
-                <GoogleLocationPicker
+                <CivicLocationPicker
                   coordinates={coordinates}
                   onChangeCoordinates={(coords) => {
                     setCoordinates(coords);
@@ -405,7 +405,7 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
                     className="w-full h-full object-cover"
                   />
                   <span className="absolute top-2.5 left-2.5 bg-black/75 backdrop-blur text-white text-[10px] px-2.5 py-1 rounded-lg font-mono">
-                    GEO-TAG: 47.6097° N, 122.3331° W
+                    GEO-TAG: 28.6315° N, 77.2167° E
                   </span>
                 </div>
 
@@ -491,8 +491,11 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
                   <span className="font-bold text-[#111827]">District 04 (Central)</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Verification Token:</span>
-                  <span className="font-mono text-indigo-600 font-bold">CT-88942-X</span>
+                  <span>Report Status:</span>
+                  <span className="text-emerald-700 font-bold flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    Verified & Ready
+                  </span>
                 </div>
               </div>
 

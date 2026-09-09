@@ -213,8 +213,9 @@ export const TrackStatusView: React.FC<TrackStatusViewProps> = ({
                   }`}>
                     {selectedComplaint.priority} Priority
                   </span>
-                  <span className="text-[11px] text-gray-400 font-mono">
-                    Citizen #{selectedComplaint.citizenToken}
+                  <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                    Verified Report
                   </span>
                 </div>
                 <h2 className="font-['Plus_Jakarta_Sans'] text-[24px] sm:text-[28px] font-extrabold text-[#111827] tracking-tight">

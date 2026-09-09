@@ -16,9 +16,9 @@ export const QuickReportModal: React.FC<QuickReportModalProps> = ({
 }) => {
   const { currentUser } = useAuth();
   const [category, setCategory] = useState('Pothole / Road Surface Damage');
-  const [location, setLocation] = useState('Near 4402 Oak Ave Crossway');
+  const [location, setLocation] = useState('Outer Circle, Connaught Place, Block C (New Delhi)');
   const [description, setDescription] = useState(
-    'Deep hole growing larger after morning frost thaw. Threat to bicycles and low sedans.'
+    'Deep hole growing larger near Metro gate. Threat to two-wheelers and transit traffic.'
   );
   const [photoSelected, setPhotoSelected] = useState<string | null>(
     'https://lh3.googleusercontent.com/aida-public/AB6AXuCKUAmlJjfN4RPAZeqjdSap1DcOB1SYBxe9IkhPw69OcoRfzN6QW9RK5jlq0V3osMWttxlXtj53GJfTbQbMI2vEXOSab5pM0XkL7HHqx-jkf0jcmFZmz1f5yERzYI6vkssUgfhDTo1-7KYKHVDNp4gR9lv-EHqArNSk7ZuN_YooteMhIj4twCqPXhqRGdkoNpbuQfy7hBtDugONdYHXl9vkcEryHWAtX6PzW_paboSR2AIZcrcsGVrk7A'
@@ -55,14 +55,14 @@ export const QuickReportModal: React.FC<QuickReportModalProps> = ({
         pipelineStep: 1,
         pipelineStepName: 'Step 1 of 5: Telemetry Received & Dispatched',
         pipelinePercent: 20,
-        assignedCrew: 'Auto-Routing to Nearest Ward 04 Patrol',
+        assignedCrew: 'Auto-Routing to Nearest Delhi MCD / NDMC Patrol',
         timeLogged: 'Just now',
         slaRemaining: '24h 00m SLA remaining',
         totalSlaHours: 24,
         slaStatus: 'nominal',
         imageUrl: photoSelected || undefined,
         gpsTagged: true,
-        citizenToken: currentUser?.badgeNumber || 'CT-88942-X',
+        citizenToken: currentUser?.badgeNumber || 'Verified Resident',
         userId: currentUser?.id,
         userEmail: currentUser?.email,
         officerNotes: [
@@ -71,7 +71,7 @@ export const QuickReportModal: React.FC<QuickReportModalProps> = ({
             author: 'AI Civic Telemetry Engine',
             role: 'System Dispatch',
             time: 'Just now',
-            text: 'Neural triage verified location. High-priority dispatch packet broadcast to District 04 rapid response queue.'
+            text: 'Neural triage verified location. High-priority dispatch packet broadcast to Delhi municipal rapid response queue.'
           }
         ]
       });
@@ -123,10 +123,10 @@ export const QuickReportModal: React.FC<QuickReportModalProps> = ({
           <div className="py-12 flex flex-col items-center justify-center text-center">
             <CheckCircle className="w-16 h-16 text-green-600 animate-bounce mb-3" />
             <h4 className="font-['Plus_Jakarta_Sans'] font-black text-[22px] text-[#111827]">
-              Dispatched to District 04 Crew!
+              Incident Dispatched!
             </h4>
             <p className="text-[14px] text-gray-500 max-w-sm mt-1 font-medium">
-              Your civic incident has been logged and cryptographically signed with token #CT-88942-X.
+              Your civic incident has been logged and assigned to the nearest municipal response team.
             </p>
           </div>
         ) : (
@@ -225,7 +225,7 @@ export const QuickReportModal: React.FC<QuickReportModalProps> = ({
                   referrerPolicy="no-referrer"
                 />
                 <span className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-[10px] px-2.5 py-0.5 rounded-md font-mono">
-                  GPS: 47.6097° N, 122.3331° W
+                  GPS: 28.6315° N, 77.2167° E
                 </span>
               </div>
             )}

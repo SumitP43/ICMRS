@@ -97,6 +97,27 @@ function UserLocationCameraController({
   return null;
 }
 
+// Controller to smoothly reset the Leaflet camera to the full Delhi panoramic overview
+function ResetDelhiCameraController({
+  resetTrigger,
+  defaultCenter,
+  defaultZoom
+}: {
+  resetTrigger: number;
+  defaultCenter: [number, number];
+  defaultZoom: number;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (map && resetTrigger > 0) {
+      map.flyTo(defaultCenter, defaultZoom, { duration: 1.1 });
+    }
+  }, [map, resetTrigger, defaultCenter, defaultZoom]);
+
+  return null;
+}
+
 // Subcomponent that manages the leaflet.heat density overlay
 function HeatmapOverlay({ 
   complaints, 
@@ -125,8 +146,8 @@ function HeatmapOverlay({
 
     // Build [lat, lng, intensity] array from complaint points
     const points: [number, number, number][] = complaints.map(c => {
-      const lat = c.latitude ?? c.coordinates?.lat ?? 47.6097;
-      const lng = c.longitude ?? c.coordinates?.lng ?? -122.3331;
+      const lat = c.latitude ?? c.coordinates?.lat ?? 28.6139;
+      const lng = c.longitude ?? c.coordinates?.lng ?? 77.2090;
       
       let intensity = 0.5;
       if (c.status === 'Resolved') intensity = 0.25;
@@ -264,10 +285,12 @@ export const CivicLeafletMap: React.FC<CivicLeafletMapProps> = ({
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [panToUserTrigger, setPanToUserTrigger] = useState<number>(0);
+  const [resetDelhiTrigger, setResetDelhiTrigger] = useState<number>(0);
   const watchIdRef = useRef<number | null>(null);
 
-  // Default coordinates centered on Seattle Ward 04
-  const defaultCenter: [number, number] = [47.6105, -122.3335];
+  // Default coordinates centered on New Delhi (Connaught Place / NCT of Delhi)
+  const defaultCenter: [number, number] = [28.6139, 77.2090];
+  const defaultZoom = 11;
 
   // Fetch complaint data from backend API endpoint (/api/complaints)
   const fetchComplaintsFromAPI = async () => {
@@ -283,11 +306,11 @@ export const CivicLeafletMap: React.FC<CivicLeafletMapProps> = ({
         // Ensure every complaint has explicit latitude and longitude numbers
         const normalized: CivicComplaint[] = json.data.map((item: any) => ({
           ...item,
-          latitude: Number(item.latitude ?? item.coordinates?.lat ?? 47.6097),
-          longitude: Number(item.longitude ?? item.coordinates?.lng ?? -122.3331),
+          latitude: Number(item.latitude ?? item.coordinates?.lat ?? 28.6139),
+          longitude: Number(item.longitude ?? item.coordinates?.lng ?? 77.2090),
           coordinates: {
-            lat: Number(item.latitude ?? item.coordinates?.lat ?? 47.6097),
-            lng: Number(item.longitude ?? item.coordinates?.lng ?? -122.3331)
+            lat: Number(item.latitude ?? item.coordinates?.lat ?? 28.6139),
+            lng: Number(item.longitude ?? item.coordinates?.lng ?? 77.2090)
           }
         }));
         setComplaints(normalized);
@@ -467,9 +490,9 @@ export const CivicLeafletMap: React.FC<CivicLeafletMapProps> = ({
   // Fallback simulator for sandboxed/desktop environments
   const simulateLiveLocation = () => {
     const simulated = {
-      lat: 47.6115,
-      lng: -122.3340,
-      accuracy: 15,
+      lat: 28.6139,
+      lng: 77.2090,
+      accuracy: 25,
       timestamp: Date.now()
     };
     setUserLocation(simulated);
@@ -491,7 +514,7 @@ export const CivicLeafletMap: React.FC<CivicLeafletMapProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-['Plus_Jakarta_Sans'] font-extrabold text-[16px] text-[#111827]">
-                OpenStreetMap React-Leaflet Radar
+                Delhi NCT Civic Geospatial Radar
               </h3>
               <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-mono font-bold flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -499,10 +522,8 @@ export const CivicLeafletMap: React.FC<CivicLeafletMapProps> = ({
               </span>
             </div>
             <p className="text-[12px] text-gray-500 font-medium flex items-center gap-1 mt-0.5">
-              <span>OSM Standard Tiles</span>
-              <span>•</span>
-              <span className="font-mono text-indigo-600">GET /api/complaints</span>
-              {loading && <span className="text-gray-400 animate-pulse">(Updating...)</span>}
+              <span>Real-time municipal grievance tracking & field telemetry</span>
+              {loading && <span className="text-gray-400 animate-pulse ml-1">(Updating...)</span>}
             </p>
           </div>
         </div>
@@ -542,6 +563,17 @@ export const CivicLeafletMap: React.FC<CivicLeafletMapProps> = ({
               <span>Center on Me</span>
             </button>
           )}
+
+          {/* Reset to Full Delhi View */}
+          <button
+            type="button"
+            onClick={() => setResetDelhiTrigger(prev => prev + 1)}
+            className="px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 transition-all shadow-sm active:scale-95 flex items-center gap-1.5 text-[12px] font-bold cursor-pointer"
+            title="Reset map view to whole Delhi (Puri Delhi Map)"
+          >
+            <Compass className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Puri Delhi View</span>
+          </button>
 
           {/* Optional Heatmap Toggle */}
           <button
@@ -586,7 +618,7 @@ export const CivicLeafletMap: React.FC<CivicLeafletMapProps> = ({
             }}
             disabled={loading}
             className="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95 disabled:opacity-50"
-            title="Refresh Complaints from Backend API (/api/complaints)"
+            title="Refresh Live Complaints"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-indigo-600' : ''}`} />
           </button>
@@ -606,7 +638,7 @@ export const CivicLeafletMap: React.FC<CivicLeafletMapProps> = ({
               onClick={simulateLiveLocation}
               className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
             >
-              Simulate Ward 04 GPS
+              Simulate Delhi Civic GPS
             </button>
             <button
               type="button"
@@ -673,7 +705,7 @@ export const CivicLeafletMap: React.FC<CivicLeafletMapProps> = ({
       <div className="relative w-full h-[540px] rounded-[32px] overflow-hidden border border-gray-200 shadow-inner bg-slate-100 z-0">
         <MapContainer
           center={defaultCenter}
-          zoom={14}
+          zoom={11}
           scrollWheelZoom={true}
           style={{ width: '100%', height: '100%', zIndex: 0 }}
         >
@@ -691,6 +723,13 @@ export const CivicLeafletMap: React.FC<CivicLeafletMapProps> = ({
           <UserLocationCameraController
             userLocation={userLocation}
             panTrigger={panToUserTrigger}
+          />
+
+          {/* Camera Reset Controller for Whole Delhi Overview */}
+          <ResetDelhiCameraController
+            resetTrigger={resetDelhiTrigger}
+            defaultCenter={defaultCenter}
+            defaultZoom={defaultZoom}
           />
 
           {/* Optional leaflet.heat Heatmap Layer */}
@@ -762,8 +801,8 @@ export const CivicLeafletMap: React.FC<CivicLeafletMapProps> = ({
 
           {/* Priority Colored Markers */}
           {showMarkers && filteredComplaints.map(complaint => {
-            const lat = complaint.latitude ?? complaint.coordinates?.lat ?? 47.6097;
-            const lng = complaint.longitude ?? complaint.coordinates?.lng ?? -122.3331;
+            const lat = complaint.latitude ?? complaint.coordinates?.lat ?? 28.6139;
+            const lng = complaint.longitude ?? complaint.coordinates?.lng ?? 77.2090;
             const isSelected = activeComplaintId === complaint.id;
             const icon = getPriorityMarkerIcon(complaint, isSelected);
 
@@ -855,8 +894,18 @@ export const CivicLeafletMap: React.FC<CivicLeafletMapProps> = ({
           })}
         </MapContainer>
 
-        {/* Quick Locate FAB button on Map (Top-Right) */}
+        {/* Quick Map Navigation FAB buttons (Top-Right) */}
         <div className="absolute top-4 right-4 z-[400] flex flex-col gap-2">
+          {/* Reset to Full Delhi View */}
+          <button
+            type="button"
+            onClick={() => setResetDelhiTrigger(prev => prev + 1)}
+            className="w-11 h-11 rounded-2xl shadow-lg border border-gray-200 bg-white/95 backdrop-blur-md text-gray-700 hover:bg-gray-50 flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+            title="Puri Delhi Map View (Full Delhi Overview)"
+          >
+            <Compass className="w-5 h-5 text-indigo-600" />
+          </button>
+
           <button
             type="button"
             onClick={() => {
@@ -889,16 +938,15 @@ export const CivicLeafletMap: React.FC<CivicLeafletMapProps> = ({
             <span className="text-[10px] text-gray-500 font-medium block truncate">
               {userLocation && nearestIncident 
                 ? `Nearest: ${nearestIncident.complaint.title.substring(0, 26)} (${formatDistance(nearestIncident.distance)})`
-                : `${filteredComplaints.length} hazards geocoded • Ward 04 Telemetry`}
+                : `${filteredComplaints.length} hazards geocoded • Delhi NCT Civic Telemetry`}
             </span>
           </div>
         </div>
 
-        {/* Backend API badge (Bottom-Left) */}
+        {/* Live sync status badge (Bottom-Left) */}
         <div className="absolute bottom-4 left-4 z-[400] bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-md border border-gray-200 flex items-center gap-2 text-[11px] font-medium text-gray-600">
           <span className={`w-2 h-2 rounded-full ${apiError ? 'bg-amber-500' : 'bg-emerald-500'}`} />
-          <span>Backend API: <strong className="text-gray-900 font-mono">/api/complaints</strong></span>
-          <span className="text-gray-400">({complaints.length} loaded)</span>
+          <span>Live Sync: <strong className="text-gray-900 font-semibold">{complaints.length} active reports</strong></span>
         </div>
       </div>
     </div>

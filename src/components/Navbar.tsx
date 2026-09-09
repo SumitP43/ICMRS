@@ -11,8 +11,7 @@ import {
   ChevronDown,
   LogOut,
   User,
-  Briefcase,
-  Mic
+  Briefcase
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { isMuted, toggleMuted, subscribeMuteChange } from '../audio/audioNotificationService';
@@ -88,7 +87,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     name: currentUser?.name || (effectiveRole === 'officer' ? 'Elena Vance' : effectiveRole === 'admin' ? 'Dir. A. Vance-Miller' : 'Marcus Vance'),
     role: effectiveRole === 'officer' ? 'Ward Officer 04' : effectiveRole === 'admin' ? 'District Commissioner' : 'Registered Citizen',
     email: currentUser?.email || `${effectiveRole}@icmrs.gov`,
-    badge: currentUser?.badgeNumber || (effectiveRole === 'officer' ? 'OFFICER-042' : effectiveRole === 'admin' ? 'ADM-DIR-001' : 'CT-88942-X'),
+    badge: currentUser?.badgeNumber || (effectiveRole === 'officer' ? 'OFFICER-042' : effectiveRole === 'admin' ? 'ADM-DIR-001' : 'Resident'),
     avatar: currentUser?.avatar || (effectiveRole === 'officer' 
       ? 'https://lh3.googleusercontent.com/aida-public/AB6AXuAo1spD6uHFwwgatDTJluJOHotpybzw1nBkawW4CpVC6tlgHanXHxZvE0b9hld20gHblmdWB1BKG26TxYFl08U0B-ZXXEI1jdhNWju4uXF9hCFgd5N9KkNaLrVmbsK6jSUlD-791HHLMzt7oy1RI-Z_Jg1iOQ8Hblq4NHF2N2s9dbKjfkqQu2gyn0Km1a1bvL1fpxUYzB9D3cLbyVdzxcmXvTJctldXOlrLGGDuADl4FDBluoZE6eIUaQ'
       : effectiveRole === 'admin'
@@ -142,7 +141,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </span>
             <input 
               className="w-full pl-9 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-[#111827] placeholder:text-gray-400 focus:outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all"
-              placeholder="Search Complaint ID, Geo-tag, or Citizen Token..." 
+              placeholder="Search Complaint ID, location, or issue..." 
               type="text"
               value={searchQuery}
               onChange={(e) => {
@@ -199,23 +198,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Role Identity & Profile Controls */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-max">
-          {/* Quick Voice & AI Chat trigger */}
-          {onOpenCivicChat && (
-            <button
-              id="topbar-talk-ai-btn"
-              type="button"
-              onClick={onOpenCivicChat}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-indigo-50 border border-indigo-200/80 text-indigo-700 text-[12px] font-extrabold hover:bg-indigo-100 hover:border-indigo-300 active:scale-95 transition-all shadow-2xs cursor-pointer group"
-              title="Talk or ask Gemini Civic AI Assistant"
-            >
-              <span className="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Mic className="w-2.5 h-2.5" />
-              </span>
-              <span className="hidden sm:inline">Talk to AI</span>
-              <span className="sm:hidden">AI</span>
-            </button>
-          )}
-
           {/* Fast Quick Report trigger on top bar */}
           {(effectiveRole === 'citizen' || effectiveRole === 'admin') && (
             <button
@@ -280,17 +262,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-200 p-3.5 z-50 animate-in fade-in">
                 <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
-                  <span className="text-[12px] font-bold text-[#111827]">Metro Dispatch Alerts</span>
+                  <span className="text-[12px] font-bold text-[#111827]">Delhi Dispatch Alerts</span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-bold border border-indigo-100">Live Feed</span>
                 </div>
                 <div className="space-y-2 text-[12px]">
                   <div className="p-2.5 rounded-xl bg-gray-50 hover:bg-indigo-50/50 transition-colors border border-gray-100">
-                    <p className="font-semibold text-[#111827]">Ward 4 Water Maintenance</p>
-                    <p className="text-[11px] text-gray-500">Scheduled valve upgrade at 9th Ave.</p>
+                    <p className="font-semibold text-[#111827]">South Delhi Water Supply Maintenance</p>
+                    <p className="text-[11px] text-gray-500">DJB scheduled valve upgrade on Sonia Vihar line.</p>
                   </div>
                   <div className="p-2.5 rounded-xl bg-gray-50 hover:bg-indigo-50/50 transition-colors border border-gray-100">
-                    <p className="font-semibold text-[#111827]">Asphalt Crew 09 Deployed</p>
-                    <p className="text-[11px] text-gray-500">Remediation started on Oak Ave & 14th St.</p>
+                    <p className="font-semibold text-[#111827]">NDMC Patch Unit Deployed</p>
+                    <p className="text-[11px] text-gray-500">Remediation started on CP Outer Circle & Barakhamba Rd.</p>
                   </div>
                 </div>
                 <button 
@@ -333,7 +315,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 uppercase tracking-wider font-mono">
                           {effectiveRole}
                         </span>
-                        <span className="text-[10px] text-gray-400 font-mono">ID: {userProfile.badge}</span>
+                        {effectiveRole === 'citizen' ? (
+                          <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                            <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                            Verified Resident
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-gray-400 font-mono">ID: {userProfile.badge}</span>
+                        )}
                       </div>
                       <p className="text-[13px] font-bold text-gray-900">{userProfile.name}</p>
                       <p className="text-[11px] text-gray-500 truncate">{userProfile.email}</p>

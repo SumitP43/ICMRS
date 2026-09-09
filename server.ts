@@ -48,7 +48,7 @@ const USERS_DB: ServerUser[] = [
     passwordHash: hashPassword("Citizen123!", citizenSalt),
     name: "Marcus Vance",
     role: "citizen",
-    badgeNumber: "CT-88942-X",
+    badgeNumber: "Verified Resident",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
   },
   {
@@ -160,7 +160,7 @@ async function startServer() {
         salt,
         name: name.trim(),
         role: "citizen",
-        badgeNumber: `CT-${tokenNumber}-X`,
+        badgeNumber: "Verified Resident",
         department: departmentName,
         avatar: selectedAvatar,
       };
@@ -311,11 +311,11 @@ async function startServer() {
     // Return complaints with explicit latitude, longitude, priority
     const formatted = complaints.map((c) => ({
       ...c,
-      latitude: c.latitude ?? c.coordinates?.lat ?? 47.6097,
-      longitude: c.longitude ?? c.coordinates?.lng ?? -122.3331,
+      latitude: c.latitude ?? c.coordinates?.lat ?? 28.6139,
+      longitude: c.longitude ?? c.coordinates?.lng ?? 77.2090,
       coordinates: {
-        lat: c.latitude ?? c.coordinates?.lat ?? 47.6097,
-        lng: c.longitude ?? c.coordinates?.lng ?? -122.3331,
+        lat: c.latitude ?? c.coordinates?.lat ?? 28.6139,
+        lng: c.longitude ?? c.coordinates?.lng ?? 77.2090,
       },
     }));
     res.json({
@@ -329,15 +329,15 @@ async function startServer() {
   app.post("/api/complaints", (req, res) => {
     try {
       const body = req.body;
-      const lat = body.latitude ?? body.coordinates?.lat ?? 47.6097;
-      const lng = body.longitude ?? body.coordinates?.lng ?? -122.3331;
+      const lat = body.latitude ?? body.coordinates?.lat ?? 28.6139;
+      const lng = body.longitude ?? body.coordinates?.lng ?? 77.2090;
 
       const newComplaint: CivicComplaint = {
         id: body.id || `#ICMRS-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`,
         title: body.title || 'Untitled Hazard',
         description: body.description || 'Public works hazard reported by citizen.',
         category: body.category || 'Roads & Bridges',
-        location: body.location || 'Ward 04 Municipal Sector',
+        location: body.location || 'NCT of Delhi Civic Ward',
         latitude: lat,
         longitude: lng,
         coordinates: { lat, lng },
@@ -354,7 +354,7 @@ async function startServer() {
         gpsTagged: body.gpsTagged ?? true,
         officerNotes: body.officerNotes || [],
         priority: body.priority || 'Medium',
-        citizenToken: body.citizenToken || `CT-${Math.floor(10000 + Math.random() * 90000)}-X`,
+        citizenToken: body.citizenToken || 'Verified Resident',
       };
 
       complaints.unshift(newComplaint);

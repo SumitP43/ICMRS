@@ -137,13 +137,13 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
               <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
               Officer Terminal • Level-3 Authorization
             </span>
-            <span className="text-gray-400 text-[11px] font-mono uppercase tracking-wider">• Node #METRO-04-CMD</span>
+            <span className="text-gray-400 text-[11px] font-mono uppercase tracking-wider">• Node #DELHI-CMD-01</span>
           </div>
           <h1 className="font-['Plus_Jakarta_Sans'] text-[32px] font-black text-[#111827] tracking-tight">
-            Ward 04 Municipal Officer Console
+            Delhi Municipal Officer Console (MCD & NDMC)
           </h1>
           <p className="text-[14px] text-gray-500 mt-1 max-w-2xl font-medium">
-            Active command desk for triage officer <span className="font-semibold text-[#111827]">Elena Vance</span>. Coordinate rapid patch crews, verify forensic proofs, and manage SLAs.
+            Active command desk for triage officer <span className="font-semibold text-[#111827]">Elena Vance</span>. Coordinate rapid patch crews, verify forensic proofs, and manage SLAs across Delhi zones.
           </p>
         </div>
 
@@ -359,7 +359,7 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
                 <Radio className="w-4 h-4 animate-pulse" />
               </div>
               <h3 className="font-['Plus_Jakarta_Sans'] text-[17px] font-extrabold text-[#111827]">
-                Ward 04 Public Advisory Broadcast
+                Delhi Municipal Public Advisory Broadcast
               </h3>
             </div>
 

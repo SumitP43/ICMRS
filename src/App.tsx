@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { RefreshCw, Bell, AlertCircle, Volume2, X, Mic, Bot } from 'lucide-react';
+import { RefreshCw, Bell, AlertCircle, Volume2, X } from 'lucide-react';
 import { 
   CivicRole, 
   NavTab, 
@@ -812,33 +812,6 @@ function ICMRSApplication() {
         user={currentUser}
         initialProblemQuery={civicChatInitialQuery}
       />
-
-      {/* Floating Action Button: Talk & Ask Problem with Civic AI */}
-      <aside 
-        id="floating-talk-assistant-container"
-        className="fixed bottom-6 right-6 z-40"
-        aria-label="Civic AI Voice Assistant Quick Access"
-      >
-        <button
-          id="floating-talk-civic-assistant-btn"
-          type="button"
-          onClick={() => {
-            setCivicChatInitialQuery('');
-            setIsCivicChatOpen(true);
-          }}
-          className="flex items-center gap-2.5 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-2xl hover:shadow-indigo-500/30 border-2 border-white/80 transition-all duration-200 cursor-pointer active:scale-95 group"
-          title="Talk to Civic Voice and AI Assistant"
-          aria-label="Talk to Civic Voice and AI Assistant"
-        >
-          <span className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white shadow-inner group-hover:scale-110 transition-transform">
-            <Mic className="w-4 h-4 text-white" />
-          </span>
-          <div className="flex flex-col text-left pr-1">
-            <span className="text-[13px] font-extrabold leading-tight">Talk & Ask Problem</span>
-            <span className="text-[10px] text-indigo-200 font-medium">Gemini AI Assistant</span>
-          </div>
-        </button>
-      </aside>
 
       {/* Admin Portal Incident Notification Floating Toast */}
       {incidentToast && shouldNotify && (

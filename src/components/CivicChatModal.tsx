@@ -355,7 +355,7 @@ export const CivicChatModal: React.FC<CivicChatModalProps> = ({
         userContext: {
           name: user?.name || 'Marcus Vance',
           ward: user?.department || 'Metro District 04',
-          badgeNumber: user?.badgeNumber || 'CT-88942-X'
+          badgeNumber: user?.badgeNumber || 'Verified Resident'
         },
         complaintsContext: complaints.map(c => ({
           id: c.id,
@@ -794,7 +794,7 @@ export const CivicChatModal: React.FC<CivicChatModalProps> = ({
           <button
             type="button"
             onClick={() => {
-              setInputText('Water main leaking and flooding the sidewalk in Ward 04');
+              setInputText('Water main leaking and flooding the road near Ring Road AIIMS');
             }}
             className="px-2.5 py-1 bg-gray-100 hover:bg-indigo-50 hover:text-indigo-600 text-gray-700 font-medium rounded-full whitespace-nowrap transition-colors cursor-pointer"
           >

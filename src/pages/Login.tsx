@@ -45,7 +45,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [regPassword, setRegPassword] = useState('');
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
   const [showRegPassword, setShowRegPassword] = useState(false);
-  const [regWard, setRegWard] = useState('District 04 — Oak Ridge Sector');
+  const [regWard, setRegWard] = useState('Central Delhi — Connaught Place & Karol Bagh');
   const [agreeTerms, setAgreeTerms] = useState(true);
 
   // Feedback & loaders
@@ -198,7 +198,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
           <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-[11px] font-medium">
             <Building2 className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Metro District 04 — Municipal Gateway</span>
+            <span>Delhi Municipal Corporation & Grievance Gateway</span>
           </div>
         </div>
 
@@ -492,7 +492,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               {/* Switch to Registration */}
               <div className="mt-5 text-center pt-4 border-t border-gray-100">
                 <p className="text-xs text-gray-500">
-                  New citizen in District 04?{' '}
+                  New resident in Delhi NCT?{' '}
                   <button
                     type="button"
                     id="switch-to-register-btn"
@@ -522,28 +522,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                   Create Citizen Account
                 </h2>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Get your official District 04 Citizen Token to report civic issues and track resolutions.
+                  Register your account to report civic issues, track real-time repairs, and receive updates.
                 </p>
-              </div>
-
-              {/* Citizen Token Preview Badge */}
-              <div className="mb-4 p-3 bg-indigo-50/70 rounded-2xl border border-indigo-100 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                    CT
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 block">
-                      Auto-Issued Citizen Token
-                    </span>
-                    <span className="text-[12px] font-mono font-bold text-gray-800">
-                      #CT-{(Math.abs((regEmail.length * 4821) + 12450) % 90000) + 10000}-X
-                    </span>
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                  Instant Verified
-                </span>
               </div>
 
               {/* Registration Form */}
@@ -614,11 +594,13 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                       onChange={(e) => setRegWard(e.target.value)}
                       className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[13px] text-[#111827] focus:outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all"
                     >
-                      <option value="District 04 — Oak Ridge Sector">District 04 — Oak Ridge Sector</option>
-                      <option value="District 04 — Maple Highlands">District 04 — Maple Highlands</option>
-                      <option value="District 04 — Riverside Precinct">District 04 — Riverside Precinct</option>
-                      <option value="District 04 — Downtown Central">District 04 — Downtown Central</option>
-                      <option value="District 04 — Industrial Beltway">District 04 — Industrial Beltway</option>
+                      <option value="Central Delhi — Connaught Place & Karol Bagh">Central Delhi — Connaught Place & Karol Bagh</option>
+                      <option value="South Delhi — Hauz Khas, Saket & GK">South Delhi — Hauz Khas, Saket & GK</option>
+                      <option value="New Delhi — India Gate & Chanakyapuri">New Delhi — India Gate & Chanakyapuri</option>
+                      <option value="West Delhi — Janakpuri & Rajouri Garden">West Delhi — Janakpuri & Rajouri Garden</option>
+                      <option value="North West Delhi — Rohini & Pitampura">North West Delhi — Rohini & Pitampura</option>
+                      <option value="East Delhi — Mayur Vihar & Laxmi Nagar">East Delhi — Mayur Vihar & Laxmi Nagar</option>
+                      <option value="South West Delhi — Dwarka & Vasant Kunj">South West Delhi — Dwarka & Vasant Kunj</option>
                     </select>
                   </div>
                 </div>
@@ -702,7 +684,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                       className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 mt-0.5"
                     />
                     <span className="text-[11px] leading-relaxed">
-                      I agree to the District 04 Civic Transparency & Verification protocol.
+                      I agree to the Civic Portal Terms of Use & Privacy Policy.
                     </span>
                   </label>
                 </div>
@@ -762,7 +744,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         {/* Bottom Helper info */}
         <div className="text-center mt-6 text-xs text-gray-400">
           <p>ICMRS Civic Intelligence System</p>
-          <p className="text-[11px] mt-0.5">District 04 Municipal Services & Citizen Protection</p>
+          <p className="text-[11px] mt-0.5">Delhi NCT Municipal Services & Citizen Grievance Redressal</p>
         </div>
       </div>
     </div>

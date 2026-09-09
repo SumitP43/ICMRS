@@ -26,7 +26,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       <div className="min-h-[60vh] flex flex-col items-center justify-center p-8">
         <div className="w-10 h-10 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
         <p className="mt-4 text-[13px] font-bold text-gray-600 tracking-wide">
-          Verifying Security Clearance & Session Tokens...
+          Verifying credentials & session...
         </p>
       </div>
     );

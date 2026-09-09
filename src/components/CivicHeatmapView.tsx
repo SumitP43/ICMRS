@@ -8,12 +8,10 @@ import {
   ShieldAlert,
   Clock,
   Sparkles,
-  Map as MapIcon,
   Compass,
   Flame
 } from 'lucide-react';
 import { CivicLeafletMap } from './CivicLeafletMap';
-import { GoogleCivicMap } from './GoogleCivicMap';
 
 interface CivicHeatmapViewProps {
   complaints: CivicComplaint[];
@@ -26,15 +24,13 @@ export const CivicHeatmapView: React.FC<CivicHeatmapViewProps> = ({
   onSelectComplaint,
   onNavigateToTrack
 }) => {
-  const [mapEngine, setMapEngine] = useState<'leaflet' | 'google'>('leaflet');
-  const [activeLayer, setActiveLayer] = useState<'all' | 'roads' | 'electrical' | 'water'>('all');
   const [selectedIncident, setSelectedIncident] = useState<CivicComplaint | null>(
     complaints[0] || null
   );
 
   return (
     <div className="w-full max-w-[100rem] mx-auto px-4 sm:px-6 py-8">
-      {/* Title & Engine Switcher */}
+      {/* Title & Geospatial Status Badge */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
@@ -43,7 +39,7 @@ export const CivicHeatmapView: React.FC<CivicHeatmapViewProps> = ({
               Live Geospatial Radar
             </span>
             <span className="text-gray-400 text-[11px] font-mono uppercase tracking-wider">
-              • Ward 04 Geofence ±2.5km • {mapEngine === 'leaflet' ? 'OpenStreetMap & leaflet.heat' : 'Google Maps Platform'}
+              • Delhi NCT Civic Grid (MCD & NDMC) • OpenStreetMap & leaflet.heat
             </span>
           </div>
           <h1 className="font-['Plus_Jakarta_Sans'] text-[32px] font-black text-[#111827] tracking-tight">
@@ -51,36 +47,14 @@ export const CivicHeatmapView: React.FC<CivicHeatmapViewProps> = ({
           </h1>
         </div>
 
-        {/* Map Provider Selector */}
-        <div className="flex items-center gap-2 bg-white rounded-2xl p-1.5 border border-gray-200 shadow-sm text-[12px] font-bold self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setMapEngine('leaflet')}
-            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-2 ${
-              mapEngine === 'leaflet'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-gray-600 hover:text-[#111827] hover:bg-gray-50'
-            }`}
-          >
-            <Compass className="w-4 h-4" />
-            <span>OpenStreetMap (Leaflet)</span>
-            <span className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono ${mapEngine === 'leaflet' ? 'bg-indigo-500 text-white' : 'bg-green-100 text-green-800'}`}>
-              No Key
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setMapEngine('google')}
-            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-2 ${
-              mapEngine === 'google'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-gray-600 hover:text-[#111827] hover:bg-gray-50'
-            }`}
-          >
-            <MapIcon className="w-4 h-4" />
-            <span>Google Maps</span>
-          </button>
+        {/* Geospatial Radar Engine Badge */}
+        <div className="flex items-center gap-2 bg-white rounded-2xl px-4 py-2 border border-gray-200 shadow-xs text-[12px] font-bold self-start sm:self-auto">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <Compass className="w-4 h-4 text-indigo-600" />
+          <span className="text-gray-700">OpenStreetMap Live Radar</span>
+          <span className="text-[10px] px-2 py-0.5 rounded-md font-mono bg-indigo-50 text-indigo-700 font-bold border border-indigo-100">
+            Active
+          </span>
         </div>
       </div>
 
@@ -88,60 +62,18 @@ export const CivicHeatmapView: React.FC<CivicHeatmapViewProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Map Canvas (8-col) */}
         <div className="lg:col-span-8">
-          {mapEngine === 'leaflet' ? (
-            <CivicLeafletMap
-              complaints={complaints}
-              selectedIncident={selectedIncident}
-              onSelectIncident={(incident) => {
-                setSelectedIncident(incident);
-                onSelectComplaint(incident);
-              }}
-              onOpenDetails={(incident) => {
-                onSelectComplaint(incident);
-                onNavigateToTrack(incident);
-              }}
-            />
-          ) : (
-            <div className="bg-white rounded-[32px] p-5 sm:p-6 border border-gray-200 shadow-sm">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-[12px] font-bold text-gray-500">Google Maps Platform Engine</span>
-                {/* Layer Filters */}
-                <div className="flex bg-gray-100 rounded-xl p-1 text-[11px] font-bold gap-1">
-                  {[
-                    { id: 'all', label: 'All Hazards' },
-                    { id: 'roads', label: 'Roads & Bridges' },
-                    { id: 'electrical', label: 'Power & Grid' },
-                    { id: 'water', label: 'Water & Sewage' },
-                  ].map(layer => (
-                    <button
-                      key={layer.id}
-                      onClick={() => setActiveLayer(layer.id as any)}
-                      className={`px-2.5 py-1 rounded-lg transition-all ${
-                        activeLayer === layer.id 
-                          ? 'bg-white text-indigo-600 shadow-xs' 
-                          : 'text-gray-600 hover:text-[#111827]'
-                      }`}
-                    >
-                      {layer.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <GoogleCivicMap
-                complaints={complaints}
-                selectedIncident={selectedIncident}
-                onSelectIncident={(incident) => {
-                  setSelectedIncident(incident);
-                  onSelectComplaint(incident);
-                }}
-                activeLayer={activeLayer}
-                onOpenDetails={(incident) => {
-                  onSelectComplaint(incident);
-                  onNavigateToTrack(incident);
-                }}
-              />
-            </div>
-          )}
+          <CivicLeafletMap
+            complaints={complaints}
+            selectedIncident={selectedIncident}
+            onSelectIncident={(incident) => {
+              setSelectedIncident(incident);
+              onSelectComplaint(incident);
+            }}
+            onOpenDetails={(incident) => {
+              onSelectComplaint(incident);
+              onNavigateToTrack(incident);
+            }}
+          />
         </div>
 
         {/* Selected Incident Drawer (4-col) */}

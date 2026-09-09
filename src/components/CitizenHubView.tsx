@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { CivicComplaint, CivicAlert, EmergencyHotline, FAQItem } from '../types';
-import { Star, ChevronDown, ChevronUp, AlertCircle, Phone, MapPin, Sparkles, Flame, Radio, X, CheckCircle, Zap, ArrowRight, BarChart3, ShieldCheck, Bot, Mic } from 'lucide-react';
+import { Star, ChevronDown, ChevronUp, AlertCircle, Phone, MapPin, Sparkles, Flame, Radio, X, CheckCircle, Zap, ArrowRight, BarChart3, ShieldCheck } from 'lucide-react';
 import { CivicLeafletMap } from './CivicLeafletMap';
 import { useAuth } from '../context/AuthContext';
 
@@ -45,7 +45,6 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
   const [isSlaModalOpen, setIsSlaModalOpen] = useState<boolean>(false);
 
   const displayName = currentUser?.name || 'Marcus Vance';
-  const citizenToken = currentUser?.badgeNumber || 'CT-88942-X';
 
   // Live dynamic telemetry calculated directly from real complaints data
   const totalCount = complaints.length;
@@ -117,33 +116,23 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
           <div className="flex items-center gap-2 mb-2">
             <span className="bento-badge-indigo">
               <span className="w-2 h-2 rounded-full bg-indigo-600 animate-ping"></span>
-              Civic-OS v4.2 Connected
+              Civic-OS Connected
             </span>
-            <span className="text-gray-400 text-[11px] font-mono uppercase tracking-wider">• Citizen Token #{citizenToken}</span>
+            <span className="text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full text-[11px] font-semibold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              Verified Resident
+            </span>
           </div>
           <h1 className="font-['Plus_Jakarta_Sans'] text-[28px] sm:text-[34px] font-black text-[#111827] tracking-tight leading-normal">
             Welcome back, <span className="text-indigo-600">{displayName}</span>
           </h1>
           <p className="text-[14px] text-gray-500 mt-1 font-medium">
-            Metro District 04 Civic Pulse is <span className="font-bold text-indigo-600">Active & Monitored</span>. 2 ongoing field dispatches near your registered zone.
+            Delhi NCT Civic Pulse is <span className="font-bold text-indigo-600">Active & Monitored</span>. Live public response network across MCD & NDMC zones.
           </p>
         </div>
 
         {/* Quick Operational Action Buttons */}
         <div className="flex flex-wrap items-center gap-3 self-start lg:self-center">
-          <button 
-            id="hero-talk-to-assistant-btn"
-            type="button"
-            onClick={() => onOpenCivicChat()}
-            className="flex items-center gap-2.5 px-4 sm:px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[12px] sm:text-[13px] font-extrabold shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer group"
-            title="Talk to Civic Voice Assistant about any problem"
-          >
-            <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Mic className="w-3.5 h-3.5 text-white" />
-            </div>
-            <span>Talk to AI Assistant</span>
-            <span className="hidden sm:inline-block px-1.5 py-0.5 bg-indigo-500/60 rounded-md text-[9px] font-mono uppercase tracking-wider">Voice</span>
-          </button>
           <button 
             type="button"
             className="flex items-center gap-2 px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-[#111827] text-[12px] font-bold hover:bg-gray-50 transition-colors shadow-sm"
@@ -779,10 +768,10 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
               <div>
                 <h3 className="font-['Plus_Jakarta_Sans'] text-[20px] text-[#111827] font-extrabold">
-                  District 04 Ward Map
+                  Delhi NCT Civic Map & Telemetry
                 </h3>
                 <p className="text-[12px] text-gray-500 font-medium">
-                  Live civic response geofence around your registered address (Radius: 2.5 km) • OpenStreetMap & leaflet.heat
+                  Live civic response grid across Delhi Municipal zones (MCD & NDMC) • OpenStreetMap & leaflet.heat
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -815,88 +804,6 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
 
         {/* Right Column: Sidebar Feeds, Hotlines & Citizen FAQs */}
         <div className="xl:col-span-4 flex flex-col gap-6">
-          
-          {/* Feature: Speak & Ask Your Problem Civic AI Assistant Widget */}
-          <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-indigo-950 rounded-[28px] sm:rounded-[32px] p-6 sm:p-7 text-white shadow-xl border border-indigo-700/60 relative overflow-hidden">
-            <div className="flex items-center justify-between pb-3.5 mb-3 border-b border-indigo-700/50">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 bg-indigo-500/30 text-indigo-200 rounded-2xl flex items-center justify-center font-bold border border-indigo-400/30 shadow-inner">
-                  <Bot className="w-5 h-5 text-indigo-200" />
-                </div>
-                <div>
-                  <h4 className="font-['Plus_Jakarta_Sans'] text-[17px] text-white font-extrabold flex items-center gap-1.5">
-                    Ask Your Problem
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  </h4>
-                  <p className="text-[11px] text-indigo-200 font-medium">Gemini Voice & Municipal Triage</p>
-                </div>
-              </div>
-              <span className="bg-emerald-400/20 text-emerald-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-400/30 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                Voice Active
-              </span>
-            </div>
-
-            <p className="text-[12px] text-indigo-100 leading-relaxed mb-4">
-              Have a problem on your street? Speak directly or chat with District 04's AI to get immediate assistance, check live repair milestones, or report municipal hazards.
-            </p>
-
-            {/* Fast Voice Call-to-action */}
-            <button
-              id="sidebar-start-talking-btn"
-              type="button"
-              onClick={() => onOpenCivicChat()}
-              className="w-full py-3 px-4 bg-white hover:bg-indigo-50 text-indigo-950 rounded-2xl font-black text-[13px] flex items-center justify-between transition-all shadow-md active:scale-98 cursor-pointer group mb-3.5"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-xl bg-indigo-600 text-white flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Mic className="w-4 h-4" />
-                </div>
-                <span className="font-['Plus_Jakarta_Sans']">Start Talking With Assistant</span>
-              </div>
-              <ArrowRight className="w-4 h-4 text-indigo-600" />
-            </button>
-
-            {/* Quick problem tags */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] text-indigo-300 uppercase tracking-wider font-bold">Tap to Ask Common Problems:</span>
-              <div className="grid grid-cols-2 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => onOpenCivicChat('Report a severe pothole damaging vehicles on my street')}
-                  className="text-left px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[11px] text-indigo-100 font-medium transition-colors truncate cursor-pointer"
-                  title="Report a severe pothole"
-                >
-                  🕳️ Road Pothole
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onOpenCivicChat('Water main leaking and flooding the sidewalk in Ward 04')}
-                  className="text-left px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[11px] text-indigo-100 font-medium transition-colors truncate cursor-pointer"
-                  title="Water main leak"
-                >
-                  💧 Water Leak
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onOpenCivicChat('Street light fixture outage making crosswalk dark at night')}
-                  className="text-left px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[11px] text-indigo-100 font-medium transition-colors truncate cursor-pointer"
-                  title="Street light outage"
-                >
-                  💡 Dark Streetlight
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onOpenCivicChat('Check status of my active complaint tickets in District 04')}
-                  className="text-left px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[11px] text-indigo-100 font-medium transition-colors truncate cursor-pointer"
-                  title="Track ticket status"
-                >
-                  📋 Track My Tickets
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* Widget 1: Real-Time Municipal Alerts Feed */}
           <div className="bg-white rounded-[28px] sm:rounded-[32px] p-6 sm:p-7 shadow-sm border border-gray-200">
             <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-gray-100">

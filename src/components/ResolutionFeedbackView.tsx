@@ -234,7 +234,7 @@ export const ResolutionFeedbackView: React.FC<ResolutionFeedbackViewProps> = ({
             {generalCommentSent ? (
               <div className="p-4 bg-indigo-50 text-indigo-800 text-[12px] rounded-2xl font-bold flex items-center gap-2 border border-indigo-100">
                 <Sparkles className="w-4 h-4 text-indigo-600" />
-                <span>Commentary submitted to Ward 04 Citizen Council!</span>
+                <span>Commentary submitted to Delhi Municipal Citizen Council!</span>
               </div>
             ) : (
               <form onSubmit={handleGeneralSubmit} className="space-y-3.5">
