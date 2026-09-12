@@ -14,7 +14,10 @@ import {
   FileCheck,
   Volume2,
   VolumeX,
-  Bell
+  Bell,
+  MapPin,
+  Camera,
+  MessageSquare
 } from 'lucide-react';
 import { 
   isMuted, 
@@ -156,16 +159,16 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
         </div>
 
         {/* Quick Officer Stat Indicators & Sound Notification Center */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
           {/* Audio Chime Notification Widget */}
-          <div className="bg-white px-4 py-2.5 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-3">
+          <div className="w-full sm:w-auto bg-white px-4 py-2.5 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between sm:justify-start gap-3">
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 id="officer-toggle-chime-btn"
                 onClick={handleToggleSound}
                 title={soundEnabled ? "Mute audio alerts" : "Enable audio alerts"}
-                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                   soundEnabled
                     ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
                     : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
@@ -184,8 +187,8 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
                     {soundEnabled ? 'Chime Active' : 'Chime Muted'}
                   </span>
                 </div>
-                <span className="text-[10px] text-gray-400 block">
-                  New & Escalated Incidents
+                <span className="text-[10px] text-gray-400 block truncate max-w-[120px] sm:max-w-none">
+                  New &amp; Escalated Alerts
                 </span>
               </div>
             </div>
@@ -193,12 +196,12 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
             <div className="h-6 w-px bg-gray-200"></div>
 
             {/* Test buttons */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 shrink-0">
               <button
                 type="button"
                 id="test-new-complaint-chime-btn"
                 onClick={() => handleTestChime('new')}
-                className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
                   chimePlaying === 'new'
                     ? 'bg-indigo-600 text-white border-indigo-600'
                     : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
@@ -206,14 +209,14 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
                 title="Preview subtle two-tone chime for newly filed complaints"
               >
                 <Bell className="w-3 h-3 text-indigo-500" />
-                <span>Test New</span>
+                <span>Test</span>
               </button>
 
               <button
                 type="button"
                 id="test-escalation-chime-btn"
                 onClick={() => handleTestChime('escalation')}
-                className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
                   chimePlaying === 'escalation'
                     ? 'bg-rose-600 text-white border-rose-600'
                     : 'bg-gray-50 text-rose-700 border-gray-200 hover:bg-gray-100'
@@ -221,20 +224,20 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
                 title="Preview alert chime for priority escalation"
               >
                 <AlertCircle className="w-3 h-3 text-rose-500" />
-                <span>Test Escalated</span>
+                <span>Alert</span>
               </button>
             </div>
           </div>
 
-          <div className="bg-white px-5 py-3 rounded-2xl border border-gray-200 shadow-sm text-right">
-            <span className="text-[11px] uppercase font-bold text-gray-400 block">Open In Queue</span>
-            <span className="font-['Plus_Jakarta_Sans'] font-black text-[22px] text-indigo-600">
+          <div className="flex-1 sm:flex-initial min-w-[120px] bg-white px-4 sm:px-5 py-3 rounded-2xl border border-gray-200 shadow-sm text-left sm:text-right">
+            <span className="text-[10px] sm:text-[11px] uppercase font-bold text-gray-400 block">Open In Queue</span>
+            <span className="font-['Plus_Jakarta_Sans'] font-black text-[20px] sm:text-[22px] text-indigo-600">
               {complaints.filter(c => c.status !== 'Resolved').length} Active
             </span>
           </div>
-          <div className="bg-white px-5 py-3 rounded-2xl border border-gray-200 shadow-sm text-right">
-            <span className="text-[11px] uppercase font-bold text-gray-400 block">SLA Compliance</span>
-            <span className="font-['Plus_Jakarta_Sans'] font-black text-[22px] text-green-600">
+          <div className="flex-1 sm:flex-initial min-w-[120px] bg-white px-4 sm:px-5 py-3 rounded-2xl border border-gray-200 shadow-sm text-left sm:text-right">
+            <span className="text-[10px] sm:text-[11px] uppercase font-bold text-gray-400 block">SLA Compliance</span>
+            <span className="font-['Plus_Jakarta_Sans'] font-black text-[20px] sm:text-[22px] text-green-600">
               99.4%
             </span>
           </div>
@@ -242,28 +245,34 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
       </div>
 
       {/* Main Grid: Incident Queue Table + Broadcast Box */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-        {/* Main 8-col: Dispatch Table */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 sm:gap-8">
+        {/* Main 8-col: Incident Cards Stack */}
         <div className="xl:col-span-8 space-y-6">
-          <div className="bg-white rounded-[32px] border border-gray-200 shadow-sm overflow-hidden">
-            {/* Table Filter Controls */}
-            <div className="p-5 sm:p-6 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-white">
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-indigo-600" />
-                <span className="text-[14px] font-extrabold text-[#111827]">Incident Triage Matrix</span>
+          <div className="bg-white rounded-2xl sm:rounded-[32px] border border-gray-200 shadow-sm overflow-hidden">
+            {/* Table Filter Controls - Stacked & Mobile Responsive */}
+            <div className="p-4 sm:p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-indigo-600" />
+                  <span className="text-[14px] sm:text-[15px] font-extrabold text-[#111827]">Incident Triage Matrix</span>
+                </div>
+                <span className="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
+                  {filtered.length} {filtered.length === 1 ? 'case' : 'cases'}
+                </span>
               </div>
 
-              <div className="flex items-center gap-3">
-                {/* Status Toggle */}
-                <div className="flex bg-gray-100 rounded-xl p-1 text-[11px] font-bold gap-1">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full md:w-auto">
+                {/* Status Toggle - Full Width On Mobile for Easy Tapping */}
+                <div className="grid grid-cols-3 sm:flex bg-gray-100/90 rounded-xl p-1 text-[11px] sm:text-[12px] font-bold gap-1">
                   {['All', 'Active', 'Resolved'].map(st => (
                     <button
                       key={st}
+                      type="button"
                       onClick={() => setFilterStatus(st)}
-                      className={`px-3 py-1.5 rounded-lg transition-all ${
+                      className={`py-2 px-3 sm:py-1.5 rounded-lg text-center transition-all min-h-[38px] sm:min-h-0 cursor-pointer ${
                         filterStatus === st 
-                          ? 'bg-white text-indigo-600 shadow-sm font-extrabold' 
-                          : 'text-gray-500 hover:text-[#111827]'
+                          ? 'bg-white text-indigo-700 shadow-xs font-black' 
+                          : 'text-gray-600 hover:text-[#111827]'
                       }`}
                     >
                       {st}
@@ -275,85 +284,170 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
                 <select
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value)}
-                  className="px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[12px] text-[#111827] font-semibold focus:outline-none focus:border-indigo-600"
+                  className="w-full sm:w-auto px-3.5 py-2.5 sm:py-2 bg-gray-50 border border-gray-200 rounded-xl text-[12px] sm:text-[13px] text-[#111827] font-semibold focus:outline-none focus:border-indigo-600 min-h-[44px] sm:min-h-0 cursor-pointer"
                 >
-                  <option value="All">All Categories</option>
-                  <option value="Roads & Bridges">Roads & Bridges</option>
-                  <option value="Electrical & Lighting">Electrical & Lighting</option>
-                  <option value="Water & Sanitation">Water & Sanitation</option>
-                  <option value="Public Safety & Transit">Public Safety & Transit</option>
-                  <option value="Parks & Forestry">Parks & Forestry</option>
+                  <option value="All">All Categories ({complaints.length})</option>
+                  <option value="Roads & Bridges">Roads &amp; Bridges</option>
+                  <option value="Electrical & Lighting">Electrical &amp; Lighting</option>
+                  <option value="Water & Sanitation">Water &amp; Sanitation</option>
+                  <option value="Public Safety & Transit">Public Safety &amp; Transit</option>
+                  <option value="Parks & Forestry">Parks &amp; Forestry</option>
                 </select>
               </div>
             </div>
 
-            {/* Incident Rows */}
-            <div className="divide-y divide-gray-100">
-              {filtered.map(item => (
-                <div key={item.id} className="p-5 sm:p-6 hover:bg-gray-50/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="font-mono text-[13px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full">
-                        {item.id}
-                      </span>
-                      <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold ${
-                        item.priority === 'Critical' 
-                          ? 'bg-red-50 text-red-700 border border-red-200' 
-                          : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {item.priority} Priority
-                      </span>
-                      <span className="text-[11px] text-gray-500 font-medium">{item.category}</span>
+            {/* Vertically Stacked Incident Cards */}
+            <div className="p-3.5 sm:p-6 space-y-4 bg-slate-50/40">
+              {filtered.length === 0 ? (
+                <div className="bg-white rounded-2xl p-8 sm:p-12 text-center border border-dashed border-gray-200 flex flex-col items-center justify-center">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                  <h4 className="font-['Plus_Jakarta_Sans'] text-[16px] sm:text-[18px] font-bold text-gray-900 mb-1">
+                    No Incidents In Selected Filter
+                  </h4>
+                  <p className="text-xs sm:text-sm text-gray-500 max-w-sm mb-4">
+                    All priority dispatches matching this criteria have been resolved or addressed by municipal crews.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => { setFilterStatus('All'); setFilterCategory('All'); }}
+                    className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                  >
+                    Reset Filter View
+                  </button>
+                </div>
+              ) : (
+                filtered.map(item => (
+                  <div 
+                    key={item.id} 
+                    className={`bg-white rounded-2xl sm:rounded-3xl border transition-all duration-200 p-4 sm:p-5 flex flex-col gap-3.5 ${
+                      item.priority === 'Critical' && item.status !== 'Resolved'
+                        ? 'border-red-200/90 shadow-xs hover:border-red-300 ring-1 ring-red-100/60'
+                        : item.status === 'Resolved'
+                        ? 'border-emerald-200/80 bg-emerald-50/20 shadow-xs'
+                        : 'border-gray-200 shadow-xs hover:border-indigo-200 hover:shadow-sm'
+                    }`}
+                  >
+                    {/* Top Row: Case ID, Priority, Category, and SLA Timer */}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <span className="font-mono text-[12px] sm:text-[13px] font-black text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2.5 py-0.5 rounded-lg tracking-wide">
+                          {item.id}
+                        </span>
+                        <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5 ${
+                          item.priority === 'Critical' 
+                            ? 'bg-red-50 text-red-800 border border-red-200' 
+                            : item.priority === 'High'
+                            ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                            : 'bg-gray-100 text-gray-700 border border-gray-200'
+                        }`}>
+                          {item.priority === 'Critical' && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>
+                          )}
+                          <span>{item.priority} Priority</span>
+                        </span>
+                        <span className="text-[11px] font-semibold text-gray-500 bg-gray-50 border border-gray-200/80 px-2 py-0.5 rounded-full">
+                          {item.category}
+                        </span>
+                      </div>
+
+                      {/* SLA Timer Indicator */}
+                      <div className="flex items-center gap-1 text-[11px] font-mono font-bold text-gray-600 bg-gray-100/90 px-2.5 py-0.5 rounded-lg shrink-0">
+                        <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>{item.slaRemaining || 'SLA Active'}</span>
+                      </div>
                     </div>
 
-                    <h4 className="font-['Plus_Jakarta_Sans'] text-[16px] font-bold text-[#111827] truncate">
-                      {item.title}
-                    </h4>
+                    {/* Incident Title & Clear Location Information */}
+                    <div>
+                      <h4 className="font-['Plus_Jakarta_Sans'] text-[15px] sm:text-[17px] font-black text-[#111827] leading-snug break-words">
+                        {item.title}
+                      </h4>
 
-                    <p className="text-[12px] text-gray-500 mt-0.5">
-                      📍 {item.location} • Crew: <span className="font-semibold text-[#111827]">{item.assignedCrew}</span>
-                    </p>
+                      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-[12px] sm:text-[13px] text-gray-600 font-medium">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                          <span className="truncate">{item.location}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Users className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                          <span className="truncate">
+                            Assigned Crew: <strong className="text-[#111827] font-bold">{item.assignedCrew}</strong>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
 
-                    <div className="flex items-center gap-3 mt-2.5">
-                      <div className="w-40 bg-gray-200 rounded-full h-2 overflow-hidden">
+                    {/* Pipeline Stage Progress - Full Width on Mobile */}
+                    <div className="bg-gray-50/90 rounded-xl p-3 border border-gray-100 space-y-1.5">
+                      <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-0.5 text-[11px] sm:text-[12px]">
+                        <span className="font-bold text-indigo-950 truncate pr-2">
+                          {item.pipelineStepName}
+                        </span>
+                        <span className="font-mono font-black text-indigo-600 shrink-0">
+                          {item.pipelinePercent}% Completed
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                         <div 
-                          className="bg-indigo-600 h-2 rounded-full" 
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            item.status === 'Resolved'
+                              ? 'bg-emerald-500'
+                              : 'bg-gradient-to-r from-indigo-600 to-blue-600'
+                          }`}
                           style={{ width: `${item.pipelinePercent}%` }}
                         ></div>
                       </div>
-                      <span className="text-[11px] font-bold text-indigo-600">
-                        {item.pipelineStepName}
-                      </span>
+                    </div>
+
+                    {/* Action Buttons - Stacked or Paired Vertically on Mobile with >=44px Touch Targets */}
+                    <div className="pt-2 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                      {/* Left: Notes and Forensic Proof Upload Buttons */}
+                      <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
+                        <button
+                          type="button"
+                          onClick={() => onOpenNotes(item)}
+                          className="min-h-[44px] px-3.5 py-2 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-xl text-[12px] font-bold text-[#111827] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                          title="View or Add Field Notes"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 text-gray-500" />
+                          <span>Notes ({item.officerNotes.length})</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => onOpenUploadPhoto(item)}
+                          className="min-h-[44px] px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-700 border border-indigo-200/80 rounded-xl text-[12px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                          title="Upload Forensic Proof or Resolution Photo"
+                        >
+                          <Camera className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>{item.afterImageUrl ? 'Proof (1)' : 'Upload Proof'}</span>
+                        </button>
+                      </div>
+
+                      {/* Right: Advance Stage Action or Certified Resolved Chip */}
+                      <div className="w-full sm:w-auto">
+                        {item.status !== 'Resolved' ? (
+                          <button
+                            type="button"
+                            onClick={() => handleAdvanceStep(item)}
+                            className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white rounded-xl text-[13px] font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                          >
+                            <span>Advance Stage</span>
+                            <ArrowUpRight className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <div className="w-full sm:w-auto min-h-[44px] px-4 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[12px] font-bold rounded-xl flex items-center justify-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            <span>Signed Off &amp; Resolved</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2.5 self-start sm:self-center shrink-0">
-                    <button
-                      onClick={() => onOpenNotes(item)}
-                      className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-[12px] font-bold text-[#111827] transition-all"
-                      title="View or Add Notes"
-                    >
-                      Notes ({item.officerNotes.length})
-                    </button>
-
-                    {item.status !== 'Resolved' ? (
-                      <button
-                        onClick={() => handleAdvanceStep(item)}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[12px] font-bold transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
-                      >
-                        <span>Advance Stage</span>
-                        <ArrowUpRight className="w-3.5 h-3.5" />
-                      </button>
-                    ) : (
-                      <span className="px-3.5 py-1.5 bg-green-50 border border-green-200 text-green-700 text-[11px] font-bold rounded-xl flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-                        <span>Signed Off</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -361,12 +455,12 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
         {/* Right 4-col: Real-time Dispatch broadcast & Crew Status */}
         <div className="xl:col-span-4 space-y-6">
           {/* Dispatch Advisory Broadcast Tool */}
-          <div className="bg-white rounded-[32px] p-7 border border-gray-200 shadow-sm space-y-4">
+          <div className="bg-white rounded-2xl sm:rounded-[32px] p-5 sm:p-7 border border-gray-200 shadow-sm space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-gray-100">
-              <div className="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
                 <Radio className="w-4 h-4 animate-pulse" />
               </div>
-              <h3 className="font-['Plus_Jakarta_Sans'] text-[17px] font-extrabold text-[#111827]">
+              <h3 className="font-['Plus_Jakarta_Sans'] text-[16px] sm:text-[17px] font-extrabold text-[#111827]">
                 Delhi Municipal Public Advisory Broadcast
               </h3>
             </div>
@@ -392,7 +486,7 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
                 />
                 <button
                   type="submit"
-                  className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-[13px] font-bold flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all"
+                  className="w-full min-h-[44px] py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-[13px] font-bold flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>Transmit Broadcast Alert</span>
@@ -402,13 +496,13 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
           </div>
 
           {/* Active Crews in Sector */}
-          <div className="bg-white rounded-[32px] p-7 border border-gray-200 shadow-sm space-y-4">
+          <div className="bg-white rounded-2xl sm:rounded-[32px] p-5 sm:p-7 border border-gray-200 shadow-sm space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
                   <Users className="w-4 h-4" />
                 </div>
-                <h3 className="font-['Plus_Jakarta_Sans'] text-[17px] font-extrabold text-[#111827]">
+                <h3 className="font-['Plus_Jakarta_Sans'] text-[16px] sm:text-[17px] font-extrabold text-[#111827]">
                   Active Field Units
                 </h3>
               </div>
@@ -429,7 +523,7 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
               <div className="p-3.5 bg-gray-50 rounded-2xl flex items-center justify-between border border-gray-100">
                 <div>
                   <span className="font-bold text-[#111827] block">Tech Team Grid Beta</span>
-                  <span className="text-[11px] text-gray-500">Location: Elmwood & Maple</span>
+                  <span className="text-[11px] text-gray-500">Location: Elmwood &amp; Maple</span>
                 </div>
                 <span className="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-600 text-[10px] font-bold">
                   Dispatched
