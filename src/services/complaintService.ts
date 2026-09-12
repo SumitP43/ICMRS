@@ -5,11 +5,23 @@
 
 import { CivicComplaint } from '../types';
 import { INITIAL_COMPLAINTS } from '../data/mockData';
+import { 
+  db, 
+  doc, 
+  collection, 
+  setDoc, 
+  updateDoc, 
+  getDocs, 
+  onSnapshot, 
+  handleFirestoreError, 
+  OperationType 
+} from '../lib/firebase';
 
 const LOCAL_STORAGE_KEY = 'icmrs_civic_complaints';
 
-// In-memory cache & event listeners for real-time reactivity across components
+// In-memory cache & event listeners for immediate reactivity
 let cachedComplaints: CivicComplaint[] = [];
+let hasSeededInitial = false;
 const subscribers = new Set<(complaints: CivicComplaint[]) => void>();
 
 function notifySubscribers() {
@@ -23,7 +35,7 @@ function notifySubscribers() {
   });
 }
 
-function loadInitialData(): CivicComplaint[] {
+function loadLocalData(): CivicComplaint[] {
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (raw) {
@@ -33,15 +45,43 @@ function loadInitialData(): CivicComplaint[] {
       }
     }
   } catch (e) {
-    console.warn('[ComplaintService] Error reading localStorage:', e);
+    console.warn('[ComplaintService] Local storage load notice:', e);
   }
   return [...INITIAL_COMPLAINTS];
 }
 
-cachedComplaints = loadInitialData();
+cachedComplaints = loadLocalData();
 
 /**
- * Real-time subscription to complaints (Local & Server Sync without Firebase).
+ * Seed initial complaints into Firestore if collection is empty
+ */
+async function seedInitialComplaintsIfEmpty() {
+  if (hasSeededInitial) return;
+  hasSeededInitial = true;
+
+  try {
+    const complaintsCol = collection(db, 'complaints');
+    const existingSnap = await getDocs(complaintsCol);
+    
+    if (existingSnap.empty) {
+      console.log('[ComplaintService] Initializing Firestore complaints collection...');
+      for (const item of INITIAL_COMPLAINTS) {
+        const itemRef = doc(db, 'complaints', item.id);
+        await setDoc(itemRef, {
+          ...item,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
+      console.log('[ComplaintService] Successfully seeded initial complaints to Firestore.');
+    }
+  } catch (err) {
+    console.warn('[ComplaintService] Auto-seed notice (permissions or network):', err);
+  }
+}
+
+/**
+ * Real-time subscription to complaints via Firestore onSnapshot
  */
 export function subscribeComplaints(
   onData: (complaints: CivicComplaint[]) => void,
@@ -49,39 +89,81 @@ export function subscribeComplaints(
 ): () => void {
   subscribers.add(onData);
 
-  // Immediately supply current cached complaints
+  // Immediately feed cached records for instant UI render
   onData([...cachedComplaints]);
 
-  // Sync fresh complaints from Express server in the background
-  fetch('/api/complaints')
-    .then((res) => (res.ok ? res.json() : null))
-    .then((json) => {
-      if (json && json.success && Array.isArray(json.data) && json.data.length > 0) {
-        const hasCustomLocal = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (!hasCustomLocal) {
-          cachedComplaints = json.data;
-          notifySubscribers();
+  // Attempt initial seed check in background
+  seedInitialComplaintsIfEmpty();
+
+  const complaintsCol = collection(db, 'complaints');
+
+  // Attach real-time Firestore listener
+  const unsubscribe = onSnapshot(
+    complaintsCol,
+    (snapshot) => {
+      if (!snapshot.empty) {
+        const firestoreList: CivicComplaint[] = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data() as CivicComplaint;
+          firestoreList.push({
+            ...data,
+            id: docSnap.id || data.id,
+          });
+        });
+
+        // Sort complaints: newest or highest priority first
+        cachedComplaints = firestoreList;
+        try {
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cachedComplaints));
+        } catch {
+          // Ignored
         }
+        notifySubscribers();
+      } else {
+        // Empty snapshot: keep cached complaints and attempt seed
+        seedInitialComplaintsIfEmpty();
       }
-    })
-    .catch((err) => {
-      if (onError) onError(err);
-    });
+    },
+    (error) => {
+      console.warn('[ComplaintService] Firestore subscription notice:', error);
+      if (onError) onError(error);
+      try {
+        handleFirestoreError(error, OperationType.GET, 'complaints');
+      } catch (handled) {
+        console.info('[ComplaintService] Structured Firestore error reported:', handled);
+      }
+    }
+  );
 
   return () => {
     subscribers.delete(onData);
+    unsubscribe();
   };
 }
 
 /**
- * Fetch all complaints directly
+ * Fetch all complaints
  */
 export async function getComplaints(): Promise<CivicComplaint[]> {
+  try {
+    const complaintsCol = collection(db, 'complaints');
+    const snapshot = await getDocs(complaintsCol);
+    if (!snapshot.empty) {
+      const list: CivicComplaint[] = [];
+      snapshot.forEach((docSnap) => {
+        list.push(docSnap.data() as CivicComplaint);
+      });
+      cachedComplaints = list;
+      return list;
+    }
+  } catch (err) {
+    console.warn('[ComplaintService] getComplaints fallback to cache:', err);
+  }
   return [...cachedComplaints];
 }
 
 /**
- * Save a new complaint document
+ * Save a new complaint document to Firestore
  */
 export async function saveComplaint(
   complaint: CivicComplaint,
@@ -90,37 +172,35 @@ export async function saveComplaint(
   const now = new Date().toISOString();
   const newRecord: CivicComplaint = {
     ...complaint,
-    userId: user?.uid || complaint.userId,
-    userEmail: user?.email || complaint.userEmail,
+    userId: user?.uid || complaint.userId || 'citizen-anon',
+    userEmail: user?.email || complaint.userEmail || '',
     createdAt: complaint.createdAt || now,
     updatedAt: now,
   };
 
+  // Optimistic UI update
   cachedComplaints = [newRecord, ...cachedComplaints.filter((c) => c.id !== newRecord.id)];
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cachedComplaints));
   } catch (err) {
-    console.warn('[ComplaintService] Could not save to localStorage:', err);
+    console.warn('[ComplaintService] LocalStorage save notice:', err);
   }
-
   notifySubscribers();
 
-  // Sync to Express backend API
+  // Persist to Firestore
   try {
-    await fetch('/api/complaints', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newRecord),
-    });
-  } catch (err) {
-    console.warn('[ComplaintService] API sync notice:', err);
+    const docRef = doc(db, 'complaints', newRecord.id);
+    await setDoc(docRef, newRecord);
+  } catch (error) {
+    console.error('[ComplaintService] Error persisting complaint to Firestore:', error);
+    handleFirestoreError(error, OperationType.WRITE, `complaints/${newRecord.id}`);
   }
 
   return newRecord;
 }
 
 /**
- * Update an existing complaint
+ * Update an existing complaint in Firestore
  */
 export async function updateComplaint(
   complaintId: string,
@@ -149,27 +229,27 @@ export async function updateComplaint(
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cachedComplaints));
   } catch (err) {
-    console.warn('[ComplaintService] Could not update localStorage:', err);
+    console.warn('[ComplaintService] LocalStorage update notice:', err);
   }
-
   notifySubscribers();
 
-  // Sync to Express backend API
+  // Persist update to Firestore
   try {
-    await fetch(`/api/complaints/${encodeURIComponent(complaintId)}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
+    const docRef = doc(db, 'complaints', complaintId);
+    await updateDoc(docRef, {
+      ...updates,
+      updatedAt: now,
     });
-  } catch (err) {
-    console.warn('[ComplaintService] API update notice:', err);
+  } catch (error) {
+    console.error('[ComplaintService] Error updating complaint in Firestore:', error);
+    handleFirestoreError(error, OperationType.UPDATE, `complaints/${complaintId}`);
   }
 
   return updatedRecord;
 }
 
 /**
- * Sync user profile
+ * Sync user profile to Firestore
  */
 export async function syncUserProfileToFirestore(user: {
   uid: string;
@@ -177,10 +257,31 @@ export async function syncUserProfileToFirestore(user: {
   displayName: string | null;
   photoURL: string | null;
 }): Promise<{ role: string }> {
-  const role = user.email === 'dp7899899@gmail.com' ? 'admin' : 'citizen';
+  const email = (user.email || '').toLowerCase().trim();
+  const isAdmin = email === 'dp7899899@gmail.com';
+  const role = isAdmin ? 'admin' : 'citizen';
+
+  try {
+    const userRef = doc(db, 'users', user.uid);
+    await setDoc(
+      userRef,
+      {
+        id: user.uid,
+        email: user.email || '',
+        name: user.displayName || (isAdmin ? 'Admin' : 'Resident'),
+        role,
+        avatar: user.photoURL || '',
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+  } catch (error) {
+    console.warn('[ComplaintService] User profile sync notice:', error);
+  }
+
   return { role };
 }
 
-// Aliases for seamless drop-in compatibility
+// Aliases for drop-in compatibility
 export const saveComplaintToFirestore = saveComplaint;
 export const updateComplaintInFirestore = updateComplaint;

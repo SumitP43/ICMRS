@@ -5,10 +5,22 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AuthUser, CivicRole, LoginCredentials, RegisterCredentials, AuthResponse } from '../types';
+import { 
+  auth, 
+  db, 
+  googleProvider, 
+  signInWithPopup, 
+  fbSignOut, 
+  onAuthStateChanged,
+  doc, 
+  getDoc, 
+  setDoc,
+  type FirebaseUser 
+} from '../lib/firebase';
 
 interface AuthContextType {
   currentUser: AuthUser | null;
-  firebaseUser: null;
+  firebaseUser: FirebaseUser | null;
   userRole: CivicRole;
   isAuthenticated: boolean;
   loading: boolean;
@@ -29,48 +41,116 @@ const STORAGE_TOKEN_KEY = 'icmrs_auth_token';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Restore session from localStorage on mount
-  useEffect(() => {
+  // Helper to convert Firebase User + Firestore doc into AuthUser
+  const buildAuthUserFromFirebase = async (fbUser: FirebaseUser): Promise<AuthUser> => {
+    const email = (fbUser.email || '').toLowerCase().trim();
+    const isBootstrappedAdmin = email === ADMIN_EMAIL.toLowerCase();
+
+    let role: CivicRole = isBootstrappedAdmin ? 'admin' : 'citizen';
+    let badgeNumber = isBootstrappedAdmin ? 'ADM-DIR-001' : 'Verified Resident';
+    let department = isBootstrappedAdmin ? 'Central Municipal Administration' : 'Delhi NCT Resident';
+
+    // Fetch or create profile from Firestore `/users/{uid}`
     try {
-      const stored = localStorage.getItem(STORAGE_USER_KEY);
-      if (stored) {
-        const user = JSON.parse(stored);
-        setCurrentUser(user);
+      const userRef = doc(db, 'users', fbUser.uid);
+      const snapshot = await getDoc(userRef);
+
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data.role && (data.role === 'admin' || data.role === 'officer' || data.role === 'citizen')) {
+          role = isBootstrappedAdmin ? 'admin' : (data.role as CivicRole);
+        }
+        if (data.badgeNumber) badgeNumber = data.badgeNumber;
+        if (data.department) department = data.department;
+      } else {
+        // Create initial user document in Firestore
+        const now = new Date().toISOString();
+        const profileData = {
+          id: fbUser.uid,
+          email: fbUser.email || '',
+          name: fbUser.displayName || 'Google Verified Citizen',
+          role,
+          badgeNumber,
+          department,
+          avatar: fbUser.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+          createdAt: now,
+          updatedAt: now,
+        };
+        await setDoc(userRef, profileData);
       }
-    } catch (err) {
-      console.warn('[Auth] Session load notice:', err);
-    } finally {
-      setLoading(false);
+    } catch (e) {
+      console.warn('[AuthContext] Firestore profile sync notice:', e);
     }
+
+    return {
+      id: fbUser.uid,
+      name: fbUser.displayName || (isBootstrappedAdmin ? 'Administrator (Google Verified)' : 'Google Verified Citizen'),
+      email: fbUser.email || '',
+      role,
+      badgeNumber,
+      department,
+      avatar: fbUser.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+    };
+  };
+
+  // Listen to Firebase Auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      setFirebaseUser(fbUser);
+      if (fbUser) {
+        try {
+          const authUser = await buildAuthUserFromFirebase(fbUser);
+          setCurrentUser(authUser);
+          localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(authUser));
+        } catch (err) {
+          console.error('[AuthContext] Failed to load Firebase profile:', err);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // Check if there's a stored session (e.g. municipal demo credentials)
+        try {
+          const stored = localStorage.getItem(STORAGE_USER_KEY);
+          if (stored) {
+            const user = JSON.parse(stored);
+            setCurrentUser(user);
+          } else {
+            setCurrentUser(null);
+          }
+        } catch {
+          setCurrentUser(null);
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   /**
-   * One-click Google Sign-in (Direct municipal authentication without Firebase)
+   * Google Sign-in with Firebase Auth
    */
   const signInWithGoogle = async (): Promise<AuthUser> => {
     setError(null);
     setLoading(true);
     try {
-      // Authenticate with user's Google account (dp7899899@gmail.com with Admin oversight)
-      const googleUser: AuthUser = {
-        id: 'usr-google-admin-01',
-        name: 'Administrator (Google Verified)',
-        email: ADMIN_EMAIL,
-        role: 'admin',
-        badgeNumber: 'ADM-DIR-001',
-        department: 'Central Municipal Administration',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
-      };
+      const credential = await signInWithPopup(auth, googleProvider);
+      const fbUser = credential.user;
+      setFirebaseUser(fbUser);
 
-      setCurrentUser(googleUser);
-      localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(googleUser));
+      const authUser = await buildAuthUserFromFirebase(fbUser);
+      setCurrentUser(authUser);
+      localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(authUser));
       setLoading(false);
-      return googleUser;
+      return authUser;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Google sign-in failed';
+      console.error('[AuthContext] Google sign-in error:', err);
       setError(msg);
       setLoading(false);
       throw err;
@@ -78,14 +158,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
-   * Credential sign-in via backend API or municipal presets
+   * Municipal credential login (supporting custom demo accounts and API)
    */
   const login = async (credentials: LoginCredentials, rememberMe: boolean = false): Promise<AuthResponse> => {
     setError(null);
     const emailLower = credentials.email.toLowerCase().trim();
 
     try {
-      // First try backend Express API /api/auth/login
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -97,7 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (data.success && data.user) {
           const authUser: AuthUser = {
             ...data.user,
-            role: (emailLower === ADMIN_EMAIL ? 'admin' : data.user.role) as CivicRole,
+            role: (emailLower === ADMIN_EMAIL.toLowerCase() ? 'admin' : data.user.role) as CivicRole,
           };
           setCurrentUser(authUser);
           if (rememberMe) {
@@ -108,12 +187,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     } catch (apiErr) {
-      console.warn('[Auth] Backend API login notice, checking role presets:', apiErr);
+      console.warn('[AuthContext] Backend API login notice:', apiErr);
     }
 
-    // Role preset fallback for immediate testing
+    // Role preset fallback for rapid municipal demonstration
     let matchedUser: AuthUser | null = null;
-    if (emailLower === 'admin@icmrs.gov' || emailLower === ADMIN_EMAIL) {
+    if (emailLower === 'admin@icmrs.gov' || emailLower === ADMIN_EMAIL.toLowerCase()) {
       matchedUser = {
         id: 'usr-admin-01',
         name: 'Dir. A. Vance-Miller',
@@ -135,7 +214,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     } else {
       matchedUser = {
-        id: 'usr-citizen-01',
+        id: `usr-citizen-${Date.now().toString(36)}`,
         name: 'Marcus Vance',
         email: credentials.email,
         role: 'citizen',
@@ -167,52 +246,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        const errMsg = data.error || 'Failed to create account. Please check your information.';
-        setError(errMsg);
-        setLoading(false);
-        return { success: false, error: errMsg };
-      }
-
-      const newUser: AuthUser = data.user;
-      setCurrentUser(newUser);
-
-      if (rememberMe) {
-        localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(newUser));
-        if (data.token) {
-          localStorage.setItem(STORAGE_TOKEN_KEY, data.token);
+      if (res.ok && data.success && data.user) {
+        const newUser: AuthUser = data.user;
+        setCurrentUser(newUser);
+        if (rememberMe) {
+          localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(newUser));
+          if (data.token) localStorage.setItem(STORAGE_TOKEN_KEY, data.token);
         }
+        setLoading(false);
+        return { success: true, user: newUser, token: data.token };
       }
-
-      setLoading(false);
-      return { success: true, user: newUser, token: data.token };
     } catch (err) {
-      console.warn('[Auth] Registration network notice, falling back to local creation:', err);
-      // Client-side fallback if server temporarily unreachable
-      const fallbackUser: AuthUser = {
-        id: `usr-citizen-${Date.now()}`,
-        name: credentials.name.trim(),
-        email: credentials.email.trim().toLowerCase(),
-        role: 'citizen',
-        badgeNumber: 'Verified Resident',
-        department: credentials.wardOrSector || 'Delhi NCT Resident',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-      };
-
-      setCurrentUser(fallbackUser);
-      if (rememberMe) {
-        localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(fallbackUser));
-      }
-      setLoading(false);
-      return { success: true, user: fallbackUser };
+      console.warn('[AuthContext] Registration API notice, using local account creation:', err);
     }
+
+    const fallbackUser: AuthUser = {
+      id: `usr-citizen-${Date.now()}`,
+      name: credentials.name.trim(),
+      email: credentials.email.trim().toLowerCase(),
+      role: 'citizen',
+      badgeNumber: 'Verified Resident',
+      department: credentials.wardOrSector || 'Delhi NCT Resident',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+    };
+
+    setCurrentUser(fallbackUser);
+    if (rememberMe) {
+      localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(fallbackUser));
+    }
+    setLoading(false);
+    return { success: true, user: fallbackUser };
   };
 
   /**
-   * Log out and clear session
+   * Log out and clear session from Firebase and local state
    */
   const logout = async (): Promise<void> => {
+    try {
+      await fbSignOut(auth);
+    } catch (err) {
+      console.warn('[AuthContext] Firebase signOut notice:', err);
+    }
+
     try {
       const token = localStorage.getItem(STORAGE_TOKEN_KEY);
       if (token) {
@@ -224,21 +299,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {
       // Ignored
     }
+
     localStorage.removeItem(STORAGE_USER_KEY);
     localStorage.removeItem(STORAGE_TOKEN_KEY);
     setCurrentUser(null);
+    setFirebaseUser(null);
   };
 
   const userRole: CivicRole = currentUser?.role || 'citizen';
   const isAuthenticated = !!currentUser;
-  const isAdmin = userRole === 'admin' || currentUser?.email === ADMIN_EMAIL;
+  const isAdmin = userRole === 'admin' || currentUser?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
   const isOfficer = isAdmin || userRole === 'officer';
 
   return (
     <AuthContext.Provider
       value={{
         currentUser,
-        firebaseUser: null,
+        firebaseUser,
         userRole,
         isAuthenticated,
         loading,

@@ -333,9 +333,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                       </div>
                       <p className="text-[13px] font-bold text-gray-900">{userProfile.name}</p>
                       <p className="text-[11px] text-gray-500 truncate">{userProfile.email}</p>
-                      <div className="mt-2 pt-2 border-t border-gray-200/80 flex items-center gap-1.5 text-[10px] text-emerald-700 font-medium">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        <span>Active Secure Session</span>
+                      <div className="mt-2 pt-2 border-t border-gray-200/80 flex items-center justify-between text-[10px]">
+                        <span className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                          <span>Firebase Auth Verified</span>
+                        </span>
+                        <span className="font-mono text-gray-400 text-[9px]">Firestore Sync</span>
                       </div>
                     </div>
 

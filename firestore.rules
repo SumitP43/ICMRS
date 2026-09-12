@@ -1,0 +1,87 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-#]+$');
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'google.com');
+    }
+
+    function isBootstrappedAdmin() {
+      return isSignedIn() && 
+        request.auth.token.email == 'dp7899899@gmail.com' &&
+        (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'google.com');
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() || 
+        (isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'email', 'name', 'role']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.email is string && data.email.size() <= 256 &&
+        data.name is string && data.name.size() <= 128 &&
+        data.role in ['citizen', 'officer', 'admin'];
+    }
+
+    function isValidComplaint(data) {
+      return data.keys().hasAll(['id', 'title', 'category', 'priority', 'status', 'description']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.title is string && data.title.size() <= 256 &&
+        data.category is string && data.category.size() <= 128 &&
+        data.priority is string && data.priority.size() <= 64 &&
+        data.status is string && data.status.size() <= 64 &&
+        data.description is string && data.description.size() <= 8192;
+    }
+
+    // User profile documents
+    match /users/{userId} {
+      allow get: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && (
+        request.resource.data.role == 'citizen' || isAdmin()
+      );
+      allow update: if (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data) && (
+        request.resource.data.role == resource.data.role || isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Civic complaints and incidents collection
+    match /complaints/{complaintId} {
+      allow read: if true; // Public civic transparency for municipal monitoring
+      allow create: if isSignedIn() && isValidId(complaintId) && isValidComplaint(request.resource.data);
+      allow update: if isSignedIn() && isValidComplaint(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Administrative registry
+    match /admins/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Connection test document
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+  }
+}
