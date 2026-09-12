@@ -3,6 +3,7 @@ import { CivicComplaint, CivicAlert, EmergencyHotline, FAQItem } from '../types'
 import { Star, ChevronDown, ChevronUp, AlertCircle, Phone, MapPin, Sparkles, Flame, Radio, X, CheckCircle, Zap, ArrowRight, BarChart3, ShieldCheck } from 'lucide-react';
 import { CivicLeafletMap } from './CivicLeafletMap';
 import { useAuth } from '../context/AuthContext';
+import { ICMRSLogo } from './ICMRSBranding';
 
 export type MetricFilterType = 'all' | 'active' | 'resolved' | 'sla';
 
@@ -112,23 +113,30 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
     <div className="w-full max-w-[100rem] mx-auto px-4 sm:px-6 py-6 sm:py-8">
       {/* Top Welcome Matrix & Pulse Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="bento-badge-indigo">
-              <span className="w-2 h-2 rounded-full bg-indigo-600 animate-ping"></span>
-              Civic-OS Connected
-            </span>
-            <span className="text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full text-[11px] font-semibold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              Verified Resident
-            </span>
+        <div className="flex items-start sm:items-center gap-4">
+          <ICMRSLogo 
+            variant="emblem" 
+            size="lg" 
+            className="ring-2 ring-indigo-500/20 shadow-md shrink-0 hidden sm:inline-flex" 
+          />
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="bento-badge-indigo">
+                <span className="w-2 h-2 rounded-full bg-indigo-600 animate-ping"></span>
+                Civic-OS Connected
+              </span>
+              <span className="text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full text-[11px] font-semibold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                Verified Resident
+              </span>
+            </div>
+            <h1 className="font-['Plus_Jakarta_Sans'] text-[28px] sm:text-[34px] font-black text-[#111827] tracking-tight leading-normal">
+              Welcome back, <span className="text-indigo-600">{displayName}</span>
+            </h1>
+            <p className="text-[14px] text-gray-500 mt-1 font-medium">
+              Delhi NCT Civic Pulse is <span className="font-bold text-indigo-600">Active &amp; Monitored</span>. Live public response network across MCD &amp; NDMC zones.
+            </p>
           </div>
-          <h1 className="font-['Plus_Jakarta_Sans'] text-[28px] sm:text-[34px] font-black text-[#111827] tracking-tight leading-normal">
-            Welcome back, <span className="text-indigo-600">{displayName}</span>
-          </h1>
-          <p className="text-[14px] text-gray-500 mt-1 font-medium">
-            Delhi NCT Civic Pulse is <span className="font-bold text-indigo-600">Active & Monitored</span>. Live public response network across MCD & NDMC zones.
-          </p>
         </div>
 
         {/* Quick Operational Action Buttons */}
@@ -451,14 +459,16 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
             <div className="flex flex-col gap-5">
               {displayedComplaints.length === 0 ? (
                 <div className="bg-white rounded-[28px] sm:rounded-[32px] p-10 text-center border border-gray-200 shadow-sm flex flex-col items-center justify-center">
-                  <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-3">
-                    <span className="material-symbols-outlined text-[28px]">search_off</span>
-                  </div>
+                  <ICMRSLogo 
+                    variant="emblem" 
+                    size="xl" 
+                    className="mb-4 shadow-lg ring-4 ring-indigo-50" 
+                  />
                   <h4 className="font-['Plus_Jakarta_Sans'] text-[18px] font-extrabold text-[#111827] mb-1">
                     No matching incidents found
                   </h4>
                   <p className="text-[13px] text-gray-500 mb-4 max-w-md font-medium">
-                    There are currently no tickets matching the "{activeMetricFilter}" criteria.
+                    There are currently no tickets matching the "{activeMetricFilter}" criteria. Metro District 04 civic telemetry is clear.
                   </p>
                   <button
                     type="button"

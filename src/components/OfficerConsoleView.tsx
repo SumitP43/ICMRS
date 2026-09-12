@@ -23,6 +23,7 @@ import {
   playNewComplaintChime, 
   playCriticalEscalationChime 
 } from '../audio/audioNotificationService';
+import { ICMRSLogo } from './ICMRSBranding';
 
 interface OfficerConsoleViewProps {
   complaints: CivicComplaint[];
@@ -131,20 +132,27 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
     <div className="w-full max-w-[100rem] mx-auto px-4 sm:px-6 py-8">
       {/* Top Banner */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="bento-badge-indigo">
-              <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
-              Officer Terminal • Level-3 Authorization
-            </span>
-            <span className="text-gray-400 text-[11px] font-mono uppercase tracking-wider">• Node #DELHI-CMD-01</span>
+        <div className="flex items-start sm:items-center gap-4">
+          <ICMRSLogo 
+            variant="emblem" 
+            size="lg" 
+            className="ring-2 ring-indigo-500/20 shadow-md shrink-0 hidden sm:inline-flex" 
+          />
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="bento-badge-indigo">
+                <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                Officer Terminal • Level-3 Authorization
+              </span>
+              <span className="text-gray-400 text-[11px] font-mono uppercase tracking-wider">• Node #DELHI-CMD-01</span>
+            </div>
+            <h1 className="font-['Plus_Jakarta_Sans'] text-[32px] font-black text-[#111827] tracking-tight">
+              Delhi Municipal Officer Console (MCD &amp; NDMC)
+            </h1>
+            <p className="text-[14px] text-gray-500 mt-1 max-w-2xl font-medium">
+              Active command desk for triage officer <span className="font-semibold text-[#111827]">Elena Vance</span>. Coordinate rapid patch crews, verify forensic proofs, and manage SLAs across Delhi zones.
+            </p>
           </div>
-          <h1 className="font-['Plus_Jakarta_Sans'] text-[32px] font-black text-[#111827] tracking-tight">
-            Delhi Municipal Officer Console (MCD & NDMC)
-          </h1>
-          <p className="text-[14px] text-gray-500 mt-1 max-w-2xl font-medium">
-            Active command desk for triage officer <span className="font-semibold text-[#111827]">Elena Vance</span>. Coordinate rapid patch crews, verify forensic proofs, and manage SLAs across Delhi zones.
-          </p>
         </div>
 
         {/* Quick Officer Stat Indicators & Sound Notification Center */}

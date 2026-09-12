@@ -1,0 +1,283 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Circular clip path -->
+    <clipPath id="circleClip">
+      <circle cx="250" cy="250" r="242" />
+    </clipPath>
+
+    <!-- Sky Gradient -->
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1d72db" />
+      <stop offset="45%" stop-color="#3b82f6" />
+      <stop offset="80%" stop-color="#93c5fd" />
+      <stop offset="100%" stop-color="#dbeafe" />
+    </linearGradient>
+
+    <!-- Building Glass Gradient -->
+    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#bfdbfe" stop-opacity="0.95" />
+      <stop offset="50%" stop-color="#60a5fa" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#2563eb" stop-opacity="0.9" />
+    </linearGradient>
+
+    <!-- Building Concrete Gradient -->
+    <linearGradient id="buildingGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#e2e8f0" />
+    </linearGradient>
+
+    <!-- Ground / Pavement Gradient -->
+    <linearGradient id="groundGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#cbd5e1" />
+      <stop offset="50%" stop-color="#e2e8f0" />
+      <stop offset="100%" stop-color="#f1f5f9" />
+    </linearGradient>
+
+    <!-- Leaf Gradient -->
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80" />
+      <stop offset="100%" stop-color="#15803d" />
+    </linearGradient>
+
+    <!-- Drop Shadows -->
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.25" />
+    </filter>
+    <filter id="bubbleShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#1e3a8a" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Outer circular border rim -->
+  <circle cx="250" cy="250" r="248" fill="#1e40af" />
+  <circle cx="250" cy="250" r="245" fill="#3b82f6" />
+
+  <!-- Main Clipped Area -->
+  <g clip-path="url(#circleClip)">
+    <!-- Sky Background -->
+    <rect x="0" y="0" width="500" height="500" fill="url(#skyGrad)" />
+
+    <!-- Distant Clouds -->
+    <path d="M60 140 Q85 110 120 125 Q150 115 170 140 Q180 160 160 175 Q120 185 80 170 Z" fill="#ffffff" opacity="0.45" />
+    <path d="M330 110 Q360 85 395 100 Q430 90 445 115 Q460 140 435 155 Q390 165 350 145 Z" fill="#ffffff" opacity="0.5" />
+
+    <!-- Distant Skyline Silhouettes -->
+    <rect x="70" y="145" width="22" height="90" fill="#93c5fd" opacity="0.6" rx="2" />
+    <rect x="96" y="125" width="28" height="110" fill="#60a5fa" opacity="0.5" rx="2" />
+    <polygon points="110,95 100,125 120,125" fill="#60a5fa" opacity="0.5" />
+    <rect x="128" y="150" width="24" height="85" fill="#93c5fd" opacity="0.6" rx="2" />
+    
+    <rect x="425" y="185" width="20" height="90" fill="#93c5fd" opacity="0.5" rx="2" />
+    <rect x="448" y="160" width="26" height="115" fill="#60a5fa" opacity="0.6" rx="2" />
+    <rect x="477" y="175" width="22" height="100" fill="#93c5fd" opacity="0.5" rx="2" />
+
+    <!-- Paved Ground / Plaza with perspective lines -->
+    <polygon points="0,370 500,370 500,500 0,500" fill="url(#groundGrad)" />
+    <!-- Plaza Paver Grid Lines -->
+    <line x1="250" y1="370" x2="250" y2="500" stroke="#94a3b8" stroke-width="1.5" opacity="0.4" />
+    <line x1="250" y1="370" x2="130" y2="500" stroke="#94a3b8" stroke-width="1.5" opacity="0.4" />
+    <line x1="250" y1="370" x2="370" y2="500" stroke="#94a3b8" stroke-width="1.5" opacity="0.4" />
+    <line x1="250" y1="370" x2="10" y2="500" stroke="#94a3b8" stroke-width="1.5" opacity="0.4" />
+    <line x1="250" y1="370" x2="490" y2="500" stroke="#94a3b8" stroke-width="1.5" opacity="0.4" />
+    <line x1="50" y1="410" x2="450" y2="410" stroke="#94a3b8" stroke-width="1.5" opacity="0.4" />
+    <line x1="20" y1="455" x2="480" y2="455" stroke="#94a3b8" stroke-width="1.5" opacity="0.4" />
+
+    <!-- Municipal Building - Left Wing -->
+    <polygon points="70,225 195,200 195,365 70,365" fill="#f8fafc" />
+    <polygon points="75,235 190,212 190,360 75,360" fill="url(#glassGrad)" />
+    <!-- Window Grid Left -->
+    <line x1="130" y1="223" x2="130" y2="360" stroke="#ffffff" stroke-width="3" opacity="0.7" />
+    <line x1="75" y1="275" x2="190" y2="260" stroke="#ffffff" stroke-width="3" opacity="0.7" />
+    <line x1="75" y1="315" x2="190" y2="308" stroke="#ffffff" stroke-width="3" opacity="0.7" />
+
+    <!-- Municipal Building - Right Wing -->
+    <polygon points="305,200 455,225 455,365 305,365" fill="#f8fafc" />
+    <polygon points="310,212 450,235 450,360 310,360" fill="url(#glassGrad)" />
+    <!-- Window Grid Right -->
+    <line x1="375" y1="222" x2="375" y2="360" stroke="#ffffff" stroke-width="3" opacity="0.7" />
+    <line x1="418" y1="230" x2="418" y2="360" stroke="#ffffff" stroke-width="3" opacity="0.7" />
+    <line x1="310" y1="260" x2="450" y2="275" stroke="#ffffff" stroke-width="3" opacity="0.7" />
+    <line x1="310" y1="308" x2="450" y2="315" stroke="#ffffff" stroke-width="3" opacity="0.7" />
+
+    <!-- Main Central Portico (Peaked Facade) with Drop Shadow -->
+    <polygon points="195,130 250,105 305,130 305,370 195,370" fill="url(#buildingGrad)" filter="url(#softShadow)" />
+    <polygon points="195,130 250,105 305,130 305,370 195,370" stroke="#cbd5e1" stroke-width="1.5" fill="none" />
+
+    <!-- Pediment Roof Edge -->
+    <polygon points="190,132 250,103 310,132 305,138 250,111 195,138" fill="#e2e8f0" />
+
+    <!-- Official ICMRS Logo Emblem on Building Facade -->
+    <!-- Circular Skyline & Leaf Seal -->
+    <g transform="translate(250, 160)">
+      <!-- Circle seal outline -->
+      <circle cx="0" cy="0" r="28" fill="#ffffff" stroke="#1e3a8a" stroke-width="3.5" />
+      
+      <!-- Navy Skyline inside seal -->
+      <path d="M-18 14 L-18 8 L-13 8 L-13 3 L-8 3 L-8 -6 L-2 -6 L-2 -16 L4 -16 L4 0 L9 0 L9 7 L18 7 L18 14 Z" fill="#1e3a8a" />
+      
+      <!-- Vibrant Green Leaf on the right of seal -->
+      <path d="M3 -3 C16 -18 22 -3 15 11 C9 8 7 3 3 -3 Z" fill="url(#leafGrad)" />
+      <!-- Leaf center spine -->
+      <path d="M4 -1 Q11 2 14 9" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" fill="none" />
+    </g>
+
+    <!-- Bold ICMRS Typography -->
+    <text x="250" y="202" font-family="'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" font-weight="900" font-size="22" fill="#0f172a" text-anchor="middle" letter-spacing="1">ICMRS</text>
+    <text x="250" y="214" font-family="'Inter', system-ui, sans-serif" font-weight="600" font-size="6.5" fill="#334155" text-anchor="middle">Intelligent Civic Management</text>
+    <text x="250" y="222" font-family="'Inter', system-ui, sans-serif" font-weight="600" font-size="6.5" fill="#334155" text-anchor="middle">&amp; Response System</text>
+
+    <!-- Glass Entrance Portal with Transom -->
+    <rect x="210" y="240" width="80" height="110" fill="url(#glassGrad)" rx="3" stroke="#94a3b8" stroke-width="2" />
+    <!-- Portico Overhang -->
+    <rect x="205" y="235" width="90" height="6" fill="#e2e8f0" rx="1" />
+    <!-- Downlights under portico -->
+    <circle cx="225" cy="241" r="2.5" fill="#fef08a" />
+    <circle cx="250" cy="241" r="2.5" fill="#fef08a" />
+    <circle cx="275" cy="241" r="2.5" fill="#fef08a" />
+
+    <!-- Double Glass Doors -->
+    <rect x="235" y="295" width="30" height="55" fill="#dbeafe" stroke="#ffffff" stroke-width="1.8" />
+    <line x1="250" y1="295" x2="250" y2="350" stroke="#3b82f6" stroke-width="1.5" />
+    <!-- Door handles -->
+    <rect x="247" y="322" width="1.5" height="8" fill="#1e3a8a" />
+    <rect x="251.5" y="322" width="1.5" height="8" fill="#1e3a8a" />
+
+    <!-- Entrance Grand Steps -->
+    <polygon points="175,370 325,370 335,385 165,385" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1" />
+    <polygon points="170,375 330,375 332,380 168,380" fill="#f1f5f9" />
+    <polygon points="160,385 340,385 345,395 155,395" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1" />
+    <polygon points="152,395 348,395 352,403 148,403" fill="#e2e8f0" />
+
+    <!-- Planters / Shrubbery flanking steps -->
+    <rect x="360" y="375" width="55" height="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" rx="2" />
+    <path d="M355 375 Q375 345 395 370 Q415 340 430 375 Z" fill="#15803d" />
+    <path d="M365 375 Q385 350 405 370 Q420 350 425 375 Z" fill="#22c55e" opacity="0.8" />
+
+    <!-- Trees Left Side (Framing) -->
+    <g>
+      <circle cx="50" cy="270" r="40" fill="#15803d" />
+      <circle cx="80" cy="285" r="35" fill="#16a34a" />
+      <circle cx="55" cy="310" r="38" fill="#22c55e" opacity="0.9" />
+      <circle cx="25" cy="330" r="42" fill="#15803d" />
+      <circle cx="75" cy="340" r="36" fill="#166534" />
+      <circle cx="105" cy="360" r="30" fill="#22c55e" />
+    </g>
+
+    <!-- Trees Right Side (Framing) -->
+    <g>
+      <circle cx="440" cy="270" r="38" fill="#15803d" />
+      <circle cx="465" cy="290" r="35" fill="#16a34a" />
+      <circle cx="425" cy="320" r="35" fill="#22c55e" opacity="0.9" />
+      <circle cx="470" cy="335" r="40" fill="#15803d" />
+      <circle cx="420" cy="355" r="32" fill="#166534" />
+    </g>
+
+    <!-- Modern Street Lampposts -->
+    <!-- Left Lamppost -->
+    <rect x="85" y="195" width="8" height="175" fill="#1e293b" />
+    <path d="M85 195 C85 185 65 185 65 195 L65 210 L105 210 L105 195 Z" fill="#1e293b" />
+    <rect x="68" y="200" width="34" height="7" fill="#fef08a" opacity="0.9" filter="url(#softShadow)" />
+    
+    <!-- Right Lamppost -->
+    <rect x="420" y="270" width="6" height="100" fill="#1e293b" />
+    <rect x="405" y="270" width="25" height="6" fill="#1e293b" />
+    <rect x="407" y="274" width="21" height="4" fill="#fef08a" opacity="0.9" />
+
+    <!-- Young Citizen in Foreground (Left-Center) -->
+    <g transform="translate(110, 185)" filter="url(#softShadow)">
+      <!-- Shadow under citizen -->
+      <ellipse cx="65" cy="285" rx="42" ry="12" fill="#0f172a" opacity="0.3" />
+
+      <!-- Citizen Body (Trousers) -->
+      <path d="M42 245 L50 285 L62 285 L65 245 L68 285 L80 285 L88 245 Z" fill="#334155" />
+      <path d="M45 282 L62 282 L60 288 L43 288 Z" fill="#1e293b" />
+      <path d="M68 282 L82 282 L84 288 L66 288 Z" fill="#1e293b" />
+
+      <!-- Citizen Hoodie Torso -->
+      <path d="M35 155 Q45 140 68 140 Q90 140 102 155 L108 245 Q70 250 32 245 Z" fill="#0f172a" />
+
+      <!-- Folded / Crossed Arms in Front -->
+      <path d="M33 162 Q25 195 45 205 Q75 210 100 195 Q105 175 98 162" fill="#1e293b" />
+      <path d="M42 195 Q65 208 90 196" stroke="#334155" stroke-width="3" fill="none" />
+      <!-- Skin of Hands -->
+      <ellipse cx="86" cy="192" rx="7" ry="5" fill="#fbcfe8" />
+      <ellipse cx="46" cy="196" rx="6" ry="4" fill="#fbcfe8" />
+
+      <!-- Hoodie Collar & Hood around neck -->
+      <path d="M40 152 Q55 168 75 168 Q95 168 100 152 Q85 138 72 138 Q55 138 40 152 Z" fill="#1e293b" />
+      <path d="M52 142 Q40 150 42 165 Q45 175 58 175 Q68 175 66 160 Z" fill="#0f172a" />
+
+      <!-- Neck -->
+      <rect x="68" y="125" width="16" height="18" fill="#fbcfe8" rx="3" />
+
+      <!-- Head & Face Profile (Looking Up towards building) -->
+      <g transform="rotate(-10, 75, 110)">
+        <!-- Face skin -->
+        <path d="M65 95 Q85 92 92 108 Q96 118 92 126 Q85 136 72 134 Q62 130 62 110 Z" fill="#fcd34d" opacity="0.9" />
+        <path d="M65 95 Q85 92 92 108 Q96 118 92 126 Q85 136 72 134 Q62 130 62 110 Z" fill="#fbcfe8" />
+        
+        <!-- Nose profile -->
+        <path d="M92 108 L97 114 L91 117" stroke="#f472b6" stroke-width="1.5" fill="none" />
+        
+        <!-- Glasses -->
+        <circle cx="86" cy="110" r="6" stroke="#0f172a" stroke-width="2" fill="none" />
+        <line x1="80" y1="109" x2="72" y2="108" stroke="#0f172a" stroke-width="2" />
+        <line x1="92" y1="110" x2="96" y2="111" stroke="#0f172a" stroke-width="2" />
+
+        <!-- Black Stylized Hair -->
+        <path d="M55 105 Q58 80 80 80 Q98 80 96 95 Q90 92 84 92 Q72 90 62 102 Z" fill="#0f172a" />
+        <path d="M52 108 Q52 90 68 85 Q75 75 88 78 Q98 82 98 94 Q90 98 85 96 Z" fill="#1e293b" />
+        <!-- Hair tufts -->
+        <path d="M65 80 Q70 70 76 76" stroke="#0f172a" stroke-width="3" stroke-linecap="round" fill="none" />
+        <path d="M78 74 Q84 66 90 75" stroke="#0f172a" stroke-width="3" stroke-linecap="round" fill="none" />
+      </g>
+    </g>
+
+    <!-- 3 Floating Civic Telemetry Speech Bubbles with Connection Trails -->
+    
+    <!-- Trail from building to Pin Bubble -->
+    <path d="M275 110 Q305 85 330 80" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="4 4" fill="none" opacity="0.9" />
+    <path d="M305 150 Q360 140 395 155" stroke="#ffffff" stroke-width="2" stroke-dasharray="4 4" fill="none" opacity="0.8" />
+
+    <!-- Bubble 1: Top-Left Complaint / Hazard Document (Red / Coral badge) -->
+    <g transform="translate(120, 80)" filter="url(#bubbleShadow)">
+      <!-- Bubble Card with Pointer -->
+      <rect x="-30" y="-30" width="60" height="52" rx="14" fill="#ffffff" stroke="#93c5fd" stroke-width="2" />
+      <polygon points="-5,22 8,22 -1,30" fill="#ffffff" />
+      <polygon points="-5,22 8,22 -1,30" stroke="#93c5fd" stroke-width="2" fill="none" />
+      
+      <!-- Document Graphic -->
+      <rect x="-18" y="-20" width="24" height="32" rx="3" fill="#38bdf8" />
+      <line x1="-13" y1="-14" x2="-2" y2="-14" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+      <line x1="-13" y1="-8" x2="-2" y2="-8" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+      <line x1="-13" y1="-2" x2="-2" y2="-2" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+      <line x1="-13" y1="4" x2="-4" y2="4" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+
+      <!-- Exclamation Warning Badge Overlaid on Document -->
+      <circle cx="12" cy="7" r="10" fill="#ef4444" stroke="#ffffff" stroke-width="2" />
+      <text x="12" y="11.5" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-weight="900" font-size="12" fill="#ffffff" text-anchor="middle">!</text>
+    </g>
+
+    <!-- Bubble 2: Top-Center Geospatial Pin (Location Marker) -->
+    <g transform="translate(335, 75)" filter="url(#bubbleShadow)">
+      <!-- Blue Bubble Card -->
+      <rect x="-26" y="-26" width="52" height="52" rx="14" fill="#3b82f6" stroke="#ffffff" stroke-width="2.5" />
+      <!-- Location Pin Vector -->
+      <path d="M0 -14 C-7 -14 -12 -9 -12 -2 C-12 5 0 14 0 14 C0 14 12 5 12 -2 C12 -9 7 -14 0 -14 Z" fill="#ffffff" />
+      <circle cx="0" cy="-3" r="4.5" fill="#3b82f6" />
+    </g>
+
+    <!-- Bubble 3: Top-Right Verified Security Shield with Checkmark -->
+    <g transform="translate(415, 150)" filter="url(#bubbleShadow)">
+      <!-- Blue Bubble Card -->
+      <rect x="-26" y="-24" width="52" height="48" rx="14" fill="#60a5fa" stroke="#ffffff" stroke-width="2.5" />
+      <polygon points="-12,24 -2,24 -18,32" fill="#60a5fa" />
+      
+      <!-- Shield Vector -->
+      <path d="M0 -12 L11 -7 C11 4 7 11 0 14 C-7 11 -11 4 -11 -7 Z" fill="#ffffff" />
+      <!-- Checkmark -->
+      <path d="M-4 1 L-1 4 L6 -4" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    </g>
+
+  </g>
+</svg>

@@ -41,6 +41,7 @@ import { QuickReportModal } from './components/QuickReportModal';
 import { OfficerNotesModal } from './components/OfficerNotesModal';
 import { UploadPhotoModal } from './components/UploadPhotoModal';
 import { CivicChatModal } from './components/CivicChatModal';
+import { ICMRSLogo } from './components/ICMRSBranding';
 
 function getRoleDefaultTab(role: CivicRole): NavTab {
   switch (role) {
@@ -492,10 +493,23 @@ function ICMRSApplication() {
   // 1. Loading Splash while verifying initial session
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4">
-        <div className="w-12 h-12 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 font-['Plus_Jakarta_Sans'] font-extrabold text-sm text-gray-800 tracking-wide">
-          ICMRS Security Engine Initializing...
+      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-6 text-center">
+        <div className="relative mb-6">
+          <div className="absolute -inset-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full blur-lg opacity-25 animate-pulse"></div>
+          <ICMRSLogo variant="emblem" size="xl" className="relative shadow-2xl ring-4 ring-white" />
+          <div className="absolute -bottom-2 -right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md">
+            <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        </div>
+        <h2 className="font-['Plus_Jakarta_Sans'] font-black text-xl text-gray-900 tracking-tight">
+          ICMRS
+        </h2>
+        <p className="text-[12px] font-bold text-indigo-600 uppercase tracking-widest mt-1">
+          Intelligent Civic Management &amp; Response System
+        </p>
+        <p className="mt-3 text-xs text-gray-500 font-mono flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          <span>Security &amp; Telemetry Engine Initializing...</span>
         </p>
       </div>
     );
@@ -699,12 +713,10 @@ function ICMRSApplication() {
       <footer className="mt-16 bg-white border-t border-gray-200 py-8 px-4 sm:px-8">
         <div className="w-full max-w-[100rem] mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-[12px] text-gray-500">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-[14px] shadow-sm">
-              <span className="material-symbols-outlined text-[20px]">account_balance</span>
-            </div>
+            <ICMRSLogo variant="emblem" size="md" className="ring-2 ring-indigo-500/20 shadow-sm" />
             <div>
               <span className="font-['Plus_Jakarta_Sans'] font-extrabold text-[#111827] text-[14px] block">
-                ICMRS — Intelligent Civic Response System
+                ICMRS — Intelligent Civic Management &amp; Response System
               </span>
               <span className="text-gray-400 font-medium">Metro District 04 Department of Public Works & Telemetry</span>
             </div>
@@ -829,9 +841,7 @@ function ICMRSApplication() {
           {/* Header row with Icon, Label, and Dismiss Button */}
           <div className="flex items-center justify-between pb-2 border-b border-gray-100">
             <div className="flex items-center gap-2">
-              <span className="text-[17px] leading-none">
-                {incidentToast.type === 'escalation' ? '⚠' : '🔔'}
-              </span>
+              <ICMRSLogo variant="mark" size="xs" />
               <span className={`text-[13px] font-black tracking-tight ${
                 incidentToast.type === 'escalation' ? 'text-red-700' : 'text-indigo-700'
               }`}>

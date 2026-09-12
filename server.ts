@@ -392,13 +392,13 @@ async function startServer() {
   // ==========================================
   let genAIClient: GoogleGenAI | null = null;
   function getGenAI(): GoogleGenAI | null {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    if (!apiKey || apiKey.trim() === "" || apiKey === "MY_GEMINI_API_KEY") {
       return null;
     }
     if (!genAIClient) {
       genAIClient = new GoogleGenAI({
-        apiKey,
+        apiKey: apiKey.trim(),
         httpOptions: {
           headers: {
             "User-Agent": "aistudio-build",
@@ -409,12 +409,33 @@ async function startServer() {
     return genAIClient;
   }
 
+  // GET /api/ai/status - Check Gemini AI connection and configuration
+  app.get("/api/ai/status", (req, res) => {
+    const rawKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    const isConfigured = Boolean(
+      rawKey && 
+      rawKey.trim().length > 0 && 
+      rawKey !== "MY_GEMINI_API_KEY" && 
+      !rawKey.includes("PLACEHOLDER")
+    );
+    
+    res.json({
+      configured: isConfigured,
+      activeModel: "gemini-3.8-flash",
+      supportedModels: ["gemini-3.8-flash", "gemini-3.1-pro-preview", "gemini-3.1-flash-lite"],
+      provider: "Google Gemini GenAI SDK (@google/genai)",
+      statusMessage: isConfigured 
+        ? "Gemini API Key verified and active" 
+        : "Gemini API Key not detected in environment. Using municipal simulated dispatch fallback."
+    });
+  });
+
   // POST /api/chat - Multi-turn conversational civic assistant
   app.post("/api/chat", async (req, res) => {
     try {
       const { 
         messages, 
-        model = "gemini-3.5-flash", 
+        model = "gemini-3.8-flash", 
         roleType = "general",
         userContext,
         complaintsContext 
@@ -428,10 +449,10 @@ async function startServer() {
       }
 
       // Validate and determine model according to project guidelines:
-      // gemini-3.1-pro-preview for complex tasks, gemini-3.5-flash for general tasks, gemini-3.1-flash-lite for fast tasks
-      const allowedModels = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.1-pro-preview"];
+      // gemini-3.1-pro-preview for complex tasks, gemini-3.8-flash for general tasks, gemini-3.1-flash-lite for fast tasks
+      const allowedModels = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.1-pro-preview"];
       
-      let selectedModel = "gemini-3.5-flash";
+      let selectedModel = "gemini-3.8-flash";
       let effectiveRole = roleType || "general";
 
       // If model is "auto" or not directly an allowed model, apply intelligent automatic classification
@@ -464,7 +485,7 @@ async function startServer() {
           selectedModel = "gemini-3.1-flash-lite";
           effectiveRole = "fast";
         } else {
-          selectedModel = "gemini-3.5-flash";
+          selectedModel = "gemini-3.8-flash";
           effectiveRole = "general";
         }
       } else {

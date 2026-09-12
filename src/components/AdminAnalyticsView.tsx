@@ -38,6 +38,7 @@ import {
   Legend
 } from 'recharts';
 import { CivicComplaint } from '../types';
+import { ICMRSLogo } from './ICMRSBranding';
 
 interface AdminAnalyticsViewProps {
   complaints?: CivicComplaint[];
@@ -346,19 +347,26 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ complain
     <div className="w-full max-w-[100rem] mx-auto px-4 sm:px-6 py-8">
       {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="bento-badge-indigo">
-              Executive Analytics Portal
-            </span>
-            <span className="text-gray-400 text-[11px] font-mono uppercase tracking-wider">• Metro Authority Audit Division</span>
+        <div className="flex items-start sm:items-center gap-4">
+          <ICMRSLogo 
+            variant="emblem" 
+            size="lg" 
+            className="ring-2 ring-indigo-500/20 shadow-md shrink-0 hidden sm:inline-flex" 
+          />
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="bento-badge-indigo">
+                Executive Analytics Portal
+              </span>
+              <span className="text-gray-400 text-[11px] font-mono uppercase tracking-wider">• Metro Authority Audit Division</span>
+            </div>
+            <h1 className="font-['Plus_Jakarta_Sans'] text-[32px] font-black text-[#111827] tracking-tight">
+              District 04 Municipal Telemetry &amp; SLA Metrics
+            </h1>
+            <p className="text-[14px] text-gray-500 mt-1 max-w-2xl font-medium">
+              Real-time automated performance audits across public infrastructure dispatches and citizen ratings.
+            </p>
           </div>
-          <h1 className="font-['Plus_Jakarta_Sans'] text-[32px] font-black text-[#111827] tracking-tight">
-            District 04 Municipal Telemetry & SLA Metrics
-          </h1>
-          <p className="text-[14px] text-gray-500 mt-1 max-w-2xl font-medium">
-            Real-time automated performance audits across public infrastructure dispatches and citizen ratings.
-          </p>
         </div>
 
         <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">

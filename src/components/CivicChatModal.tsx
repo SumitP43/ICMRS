@@ -23,6 +23,7 @@ import {
   Settings2
 } from 'lucide-react';
 import { CivicComplaint } from '../types';
+import { ICMRSLogo } from './ICMRSBranding';
 
 interface CivicChatModalProps {
   isOpen: boolean;
@@ -34,7 +35,7 @@ interface CivicChatModalProps {
   initialProblemQuery?: string;
 }
 
-export type GeminiModelChoice = 'auto' | 'gemini-3.5-flash' | 'gemini-3.1-flash-lite' | 'gemini-3.1-pro-preview';
+export type GeminiModelChoice = 'auto' | 'gemini-3.8-flash' | 'gemini-3.5-flash' | 'gemini-3.1-flash-lite' | 'gemini-3.1-pro-preview';
 export type AssistantRoleChoice = 'general' | 'fast' | 'expert';
 
 interface ChatMessage {
@@ -74,16 +75,29 @@ export const CivicChatModal: React.FC<CivicChatModalProps> = ({
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [aiStatus, setAiStatus] = useState<{ configured: boolean; activeModel: string; statusMessage: string } | null>(null);
+
+  // Fetch Gemini AI link status
+  useEffect(() => {
+    fetch('/api/ai/status')
+      .then(res => res.json())
+      .then(data => {
+        setAiStatus(data);
+      })
+      .catch(err => {
+        console.warn('Could not check AI status:', err);
+      });
+  }, [isOpen]);
 
   // Fixed AI Mode - loaded from persistent local storage
   const [selectedModel, setSelectedModel] = useState<GeminiModelChoice>(() => {
     try {
       const saved = localStorage.getItem('icmrs_fixed_ai_mode');
-      if (saved && ['auto', 'gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-3.1-pro-preview'].includes(saved)) {
+      if (saved && ['auto', 'gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-3.1-pro-preview'].includes(saved)) {
         return saved as GeminiModelChoice;
       }
     } catch (e) {}
-    return 'gemini-3.5-flash';
+    return 'gemini-3.8-flash';
   });
 
   const [selectedRole, setSelectedRole] = useState<AssistantRoleChoice>(() => {
@@ -446,18 +460,16 @@ export const CivicChatModal: React.FC<CivicChatModalProps> = ({
         {/* Header with Title, Model Badge, and Controls */}
         <div className="px-5 py-4 bg-gradient-to-r from-indigo-900 via-indigo-800 to-indigo-950 text-white flex items-center justify-between border-b border-indigo-700/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-500/30 border border-indigo-400/40 flex items-center justify-center text-white shadow-inner">
-              <Bot className="w-5 h-5 text-indigo-200" />
-            </div>
+            <ICMRSLogo variant="emblem" size="md" className="ring-2 ring-white/30 shadow-md shrink-0" />
             <div>
               <div className="flex items-center gap-2">
                 <h3 id="civic-chat-title" className="font-['Plus_Jakarta_Sans'] font-extrabold text-[16px] leading-tight flex items-center gap-1.5 text-white">
-                  Civic Response Voice & AI Assistant
+                  ICMRS Civic Response AI Assistant
                 </h3>
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               </div>
               <p className="text-[11px] text-indigo-200 font-medium">
-                District 04 Municipal Problem Diagnostic & Voice Triage
+                District 04 Municipal Problem Diagnostic &amp; Voice Triage • Gemini GenAI
               </p>
             </div>
           </div>
@@ -489,7 +501,7 @@ export const CivicChatModal: React.FC<CivicChatModalProps> = ({
 
         {/* Fixed AI Mode Status & Control Bar */}
         <div className="px-4 py-2 bg-slate-50/90 border-b border-gray-200 flex flex-wrap items-center justify-between gap-2 text-[11px] select-none">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-indigo-100/70 border border-indigo-200/80 text-indigo-900 font-bold">
               <Lock className="w-3 h-3 text-indigo-700" />
               <span>AI Mode Fixed:</span>
@@ -502,11 +514,18 @@ export const CivicChatModal: React.FC<CivicChatModalProps> = ({
                 ? 'Fast Dispatch Hotline'
                 : selectedModel === 'gemini-3.1-pro-preview'
                 ? 'Engineering & Code Specialist'
-                : 'District 04 Municipal Triage'}
+                : 'District 04 Municipal Triage (gemini-3.8-flash)'}
             </span>
-            <span className="text-[10px] text-gray-400 hidden sm:inline">
-              ({selectedModel === 'auto' ? 'Gemini 3.5 & 3.1 Adaptive' : selectedModel})
-            </span>
+            {aiStatus && (
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1 ${
+                aiStatus.configured 
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                  : 'bg-amber-50 text-amber-700 border-amber-200'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${aiStatus.configured ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'}`}></span>
+                {aiStatus.configured ? 'Gemini API Key Linked' : 'Simulated Telemetry Fallback'}
+              </span>
+            )}
           </div>
 
           <div className="relative">
@@ -535,9 +554,9 @@ export const CivicChatModal: React.FC<CivicChatModalProps> = ({
                 <div className="flex flex-col gap-1">
                   <button
                     type="button"
-                    onClick={() => handleModelChange('gemini-3.5-flash', 'general')}
+                    onClick={() => handleModelChange('gemini-3.8-flash', 'general')}
                     className={`text-left px-2.5 py-2 rounded-xl text-[11px] flex items-center justify-between transition-colors cursor-pointer ${
-                      selectedModel === 'gemini-3.5-flash'
+                      selectedModel === 'gemini-3.8-flash' || selectedModel === 'gemini-3.5-flash'
                         ? 'bg-indigo-50 text-indigo-900 font-bold border border-indigo-200'
                         : 'hover:bg-gray-50 text-gray-700'
                     }`}
@@ -546,9 +565,9 @@ export const CivicChatModal: React.FC<CivicChatModalProps> = ({
                       <div className="font-bold flex items-center gap-1">
                         <span>General Civic Triage</span>
                       </div>
-                      <div className="text-[10px] text-gray-500">Standard municipal reports (gemini-3.5-flash)</div>
+                      <div className="text-[10px] text-gray-500">Standard municipal reports (gemini-3.8-flash)</div>
                     </div>
-                    {selectedModel === 'gemini-3.5-flash' && <Check className="w-3.5 h-3.5 text-indigo-600" />}
+                    {(selectedModel === 'gemini-3.8-flash' || selectedModel === 'gemini-3.5-flash') && <Check className="w-3.5 h-3.5 text-indigo-600" />}
                   </button>
 
                   <button
@@ -583,7 +602,7 @@ export const CivicChatModal: React.FC<CivicChatModalProps> = ({
                       <div className="font-bold flex items-center gap-1">
                         <span>Complex Specialist Mode</span>
                       </div>
-                      <div className="text-[10px] text-gray-500">Code §14-B & engineering (gemini-3.1-pro-preview)</div>
+                      <div className="text-[10px] text-gray-500">Code §14-B &amp; engineering (gemini-3.1-pro-preview)</div>
                     </div>
                     {selectedModel === 'gemini-3.1-pro-preview' && <Check className="w-3.5 h-3.5 text-purple-600" />}
                   </button>

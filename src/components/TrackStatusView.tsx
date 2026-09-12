@@ -22,6 +22,7 @@ import {
   ArrowUpRight,
   ShieldCheck
 } from 'lucide-react';
+import { ICMRSLogo } from './ICMRSBranding';
 
 interface TrackStatusViewProps {
   complaints: CivicComplaint[];
@@ -72,21 +73,24 @@ export const TrackStatusView: React.FC<TrackStatusViewProps> = ({
     <div className="w-full max-w-[100rem] mx-auto px-4 sm:px-6 py-8 font-['Inter',sans-serif]">
       {/* Top Banner with SLA Summary Stats */}
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white rounded-3xl p-6 border border-gray-200 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600">
-              <Timer className="w-4 h-4" />
-            </span>
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600 font-mono">
-              Metro District 04 Telemetry Engine
-            </span>
+        <div className="flex items-start sm:items-center gap-4">
+          <ICMRSLogo variant="emblem" size="md" className="ring-2 ring-indigo-500/20 shadow-sm shrink-0 hidden sm:inline-flex" />
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600">
+                <Timer className="w-4 h-4" />
+              </span>
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600 font-mono">
+                Metro District 04 Telemetry Engine
+              </span>
+            </div>
+            <h1 className="font-['Plus_Jakarta_Sans'] text-2xl font-black text-gray-900 tracking-tight">
+              Incident Response &amp; SLA Tracker
+            </h1>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Dynamic countdown timers, time-remaining progress gauges, and guaranteed municipal SLA benchmarks.
+            </p>
           </div>
-          <h1 className="font-['Plus_Jakarta_Sans'] text-2xl font-black text-gray-900 tracking-tight">
-            Incident Response & SLA Tracker
-          </h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Dynamic countdown timers, time-remaining progress gauges, and guaranteed municipal SLA benchmarks.
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">

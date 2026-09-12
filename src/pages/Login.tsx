@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { CivicRole } from '../types';
+import { ICMRSLogo } from '../components/ICMRSBranding';
 
 interface LoginProps {
   onLoginSuccess?: (role: CivicRole) => void;
@@ -185,15 +186,17 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     <div className="min-h-screen bg-[#f8fafc] text-[#191c1e] flex flex-col justify-center items-center py-10 px-4 sm:px-6 lg:px-8 font-['Inter',sans-serif]">
       <div className="w-full max-w-md">
         {/* ICMRS Branding */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-13 h-13 bg-indigo-600 rounded-2xl text-white font-bold text-2xl shadow-lg shadow-indigo-100 mb-3 ring-4 ring-indigo-50">
-            C
-          </div>
+        <div className="text-center mb-6 flex flex-col items-center">
+          <ICMRSLogo 
+            variant="emblem" 
+            size="xl" 
+            className="shadow-xl ring-4 ring-indigo-100/90 mb-3 hover:scale-105 transition-transform" 
+          />
           <h1 className="font-['Plus_Jakarta_Sans'] text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
             ICMRS
           </h1>
           <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mt-1">
-            Intelligent Civic Response & Municipal Services
+            Intelligent Civic Management &amp; Response System
           </p>
 
           <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-[11px] font-medium">

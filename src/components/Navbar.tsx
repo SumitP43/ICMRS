@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { isMuted, toggleMuted, subscribeMuteChange } from '../audio/audioNotificationService';
+import { ICMRSLogo } from './ICMRSBranding';
 
 interface NavbarProps {
   currentRole: CivicRole;
@@ -103,11 +104,14 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-4 min-w-max">
           <button 
             onClick={() => setActiveTab('citizen-hub')}
-            className="flex items-center gap-3 text-left hover:opacity-95 transition-opacity group"
+            className="flex items-center gap-3 text-left hover:opacity-95 transition-opacity group cursor-pointer"
+            title="ICMRS — Intelligent Civic Management & Response System"
           >
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-sm group-hover:bg-indigo-700 transition-colors">
-              C
-            </div>
+            <ICMRSLogo 
+              variant="emblem" 
+              size="md" 
+              className="ring-2 ring-indigo-500/25 shadow-sm group-hover:scale-105 transition-transform" 
+            />
             <div className="flex flex-col">
               <span className="font-['Plus_Jakarta_Sans'] font-black text-[18px] text-[#111827] leading-none tracking-tight">
                 ICMRS
@@ -262,7 +266,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-200 p-3.5 z-50 animate-in fade-in">
                 <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
-                  <span className="text-[12px] font-bold text-[#111827]">Delhi Dispatch Alerts</span>
+                  <div className="flex items-center gap-2">
+                    <ICMRSLogo variant="mark" size="xs" />
+                    <span className="text-[12px] font-bold text-[#111827]">Delhi Dispatch Alerts</span>
+                  </div>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-bold border border-indigo-100">Live Feed</span>
                 </div>
                 <div className="space-y-2 text-[12px]">
