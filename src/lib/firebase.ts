@@ -14,6 +14,7 @@ import {
 } from 'firebase/auth';
 import { 
   getFirestore, 
+  initializeFirestore,
   doc, 
   getDocFromServer,
   collection,
@@ -31,10 +32,25 @@ import firebaseConfig from '../../firebase-applet-config.json';
 // Initialize Firebase App
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Initialize Firestore (default or specified named database)
-export const db = (firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== '(default)')
-  ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
-  : getFirestore(app);
+// Initialize Firestore (default or specified named database) with auto-detect long polling for iframe/sandbox connectivity
+function getOrCreateFirestore() {
+  const isNamedDb = firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== '(default)';
+  const dbId = isNamedDb ? firebaseConfig.firestoreDatabaseId : undefined;
+
+  try {
+    // Attempt initializeFirestore with robust auto-detect long polling first
+    return dbId 
+      ? initializeFirestore(app, { experimentalAutoDetectLongPolling: true }, dbId)
+      : initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
+  } catch {
+    // Fallback if already initialized
+    return isNamedDb 
+      ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
+      : getFirestore(app);
+  }
+}
+
+export const db = getOrCreateFirestore();
 
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();

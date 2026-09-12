@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import crypto from "crypto";
 import { GoogleGenAI } from "@google/genai";
 import { createServer as createViteServer } from "vite";
@@ -299,92 +300,422 @@ async function startServer() {
     });
   });
 
-  // In-memory complaint storage initialized with municipal mock data
-  let complaints: CivicComplaint[] = INITIAL_COMPLAINTS.map((c) => ({
-    ...c,
-    latitude: c.coordinates.lat,
-    longitude: c.coordinates.lng,
-  }));
+  // ==========================================
+  // PERSISTENT COMPLAINTS DATABASE ENGINE
+  // ==========================================
+  const DATA_DIR = path.join(process.cwd(), "data");
+  const COMPLAINTS_FILE = path.join(DATA_DIR, "complaints.json");
 
-  // GET /api/complaints - Returns all complaints with latitude, longitude, and priority
-  app.get("/api/complaints", (req, res) => {
-    // Return complaints with explicit latitude, longitude, priority
-    const formatted = complaints.map((c) => ({
+  // Helper to determine department by category
+  function getDepartmentForCategory(category: string): string {
+    switch (category) {
+      case "Roads & Bridges":
+        return "NDMC Roads & Infrastructure Directorate";
+      case "Electrical & Lighting":
+        return "BSES Power & Municipal Lighting Wing";
+      case "Water & Sanitation":
+        return "Delhi Jal Board Hydrology Unit";
+      case "Public Safety & Transit":
+        return "Delhi Traffic Police & PWD Telemetry";
+      case "Parks & Forestry":
+        return "Municipal Parks & Forestry Directorate";
+      case "Waste Management":
+        return "Clean Delhi Solid Waste Response";
+      default:
+        return "District 04 Municipal Response Bureau";
+    }
+  }
+
+  function normalizeComplaintRecord(c: any): CivicComplaint {
+    const now = new Date().toISOString();
+    const id = c.id || `#ICMRS-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+    const lat = c.latitude ?? c.coordinates?.lat ?? 28.6139;
+    const lng = c.longitude ?? c.coordinates?.lng ?? 77.2090;
+    const category = c.category || "Roads & Bridges";
+    const status = c.status || "Pending Triage";
+    const priority = c.priority || "Medium";
+    const citizenName = c.citizenName || c.user?.name || (c.userId ? "Registered Resident" : "Marcus Vance");
+    const citizenEmail = c.citizenEmail || c.userEmail || (c.userId ? "citizen@icmrs.gov" : "citizen@icmrs.gov");
+    const department = c.department || getDepartmentForCategory(category);
+    const assignedOfficer = c.assignedOfficer || "Elena Vance";
+    const assignedCrew = c.assignedCrew || "Triage Dispatch Unit 04";
+    const resolutionDetails = c.resolutionDetails || (status === "Resolved" ? "Hazard remediated and signed off according to Municipal Safety Code §42." : "");
+    const dateTime = c.dateTime || c.timeLogged || c.createdAt || now;
+    const createdAt = c.createdAt || now;
+    const updatedAt = c.updatedAt || now;
+
+    const attachments = Array.isArray(c.attachments) && c.attachments.length > 0
+      ? c.attachments
+      : (c.imageUrl ? [{
+          id: `att-${id.replace(/[^a-zA-Z0-9]/g, '')}-1`,
+          name: "Photographic Evidence",
+          url: c.imageUrl,
+          type: "image/jpeg",
+          uploadedAt: createdAt
+        }] : []);
+
+    const statusHistory = Array.isArray(c.statusHistory) && c.statusHistory.length > 0
+      ? c.statusHistory
+      : [{
+          status: status,
+          timestamp: createdAt,
+          updatedBy: citizenName,
+          role: "citizen",
+          notes: `Complaint initially filed and dispatched to ${department}`
+        }];
+
+    return {
       ...c,
-      latitude: c.latitude ?? c.coordinates?.lat ?? 28.6139,
-      longitude: c.longitude ?? c.coordinates?.lng ?? 77.2090,
-      coordinates: {
-        lat: c.latitude ?? c.coordinates?.lat ?? 28.6139,
-        lng: c.longitude ?? c.coordinates?.lng ?? 77.2090,
-      },
-    }));
+      id,
+      complaintNumber: c.complaintNumber || id,
+      title: c.title || "Untitled Hazard",
+      description: c.description || "Citizen reported public infrastructure issue.",
+      category,
+      status,
+      priority,
+      location: c.location || "District 04, Delhi NCT",
+      coordinates: { lat, lng },
+      latitude: lat,
+      longitude: lng,
+      citizenName,
+      citizenEmail,
+      department,
+      assignedCrew,
+      assignedOfficer,
+      resolutionDetails,
+      dateTime,
+      attachments,
+      statusHistory,
+      createdAt,
+      updatedAt,
+      pipelineStep: typeof c.pipelineStep === "number" ? c.pipelineStep : (status === "Resolved" ? 5 : 1),
+      pipelineStepName: c.pipelineStepName || (status === "Resolved" ? "Step 5 of 5: Certified Sign-off" : "Step 1 of 5: Telemetry Received & Dispatched"),
+      pipelinePercent: typeof c.pipelinePercent === "number" ? c.pipelinePercent : (status === "Resolved" ? 100 : 20),
+      timeLogged: c.timeLogged || "Just now",
+      slaRemaining: c.slaRemaining || (priority === "Critical" ? "4h 00m SLA standard" : "24h 00m SLA standard"),
+      totalSlaHours: c.totalSlaHours || (priority === "Critical" ? 4 : 24),
+      slaStatus: c.slaStatus || (status === "Resolved" ? "resolved" : priority === "Critical" ? "urgent" : "nominal"),
+      imageUrl: c.imageUrl,
+      imageAlt: c.imageAlt,
+      beforeImageUrl: c.beforeImageUrl,
+      afterImageUrl: c.afterImageUrl,
+      beforeImageAlt: c.beforeImageAlt,
+      afterImageAlt: c.afterImageAlt,
+      gpsTagged: c.gpsTagged ?? true,
+      officerNotes: Array.isArray(c.officerNotes) ? c.officerNotes : [],
+      citizenToken: c.citizenToken || "Verified Resident",
+      userId: c.userId,
+      userEmail: citizenEmail
+    };
+  }
+
+  function saveComplaintsToDb(list: CivicComplaint[]) {
+    try {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+      const tempFile = `${COMPLAINTS_FILE}.tmp.${Date.now()}`;
+      fs.writeFileSync(tempFile, JSON.stringify(list, null, 2), "utf-8");
+      fs.renameSync(tempFile, COMPLAINTS_FILE);
+    } catch (err) {
+      console.error("[Database] Error saving complaints to disk:", err);
+    }
+  }
+
+  function loadComplaintsFromDb(): CivicComplaint[] {
+    try {
+      if (fs.existsSync(COMPLAINTS_FILE)) {
+        const raw = fs.readFileSync(COMPLAINTS_FILE, "utf-8");
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(normalizeComplaintRecord);
+        }
+      }
+    } catch (err) {
+      console.error("[Database] Error reading complaints.json:", err);
+    }
+
+    // Seed initial complaints permanently to disk
+    const seeded = INITIAL_COMPLAINTS.map(normalizeComplaintRecord);
+    saveComplaintsToDb(seeded);
+    return seeded;
+  }
+
+  // Generate guaranteed unique complaint number
+  function generateUniqueComplaintNumber(existingList: CivicComplaint[]): string {
+    const year = new Date().getFullYear();
+    let candidate = "";
+    let attempts = 0;
+    do {
+      const randomNum = Math.floor(100000 + Math.random() * 900000);
+      candidate = `#ICMRS-${year}-${randomNum}`;
+      attempts++;
+    } while (existingList.some(c => c.id === candidate || c.complaintNumber === candidate) && attempts < 100);
+
+    return candidate;
+  }
+
+  // Load persistent complaint storage initialized from database
+  let complaints: CivicComplaint[] = loadComplaintsFromDb();
+
+  // GET /api/complaints - Returns all complaints from persistent database
+  app.get("/api/complaints", (req, res) => {
+    complaints = loadComplaintsFromDb();
     res.json({
       success: true,
-      count: formatted.length,
-      data: formatted,
+      count: complaints.length,
+      data: complaints,
     });
   });
 
-  // POST /api/complaints - Submit a new complaint
+  // GET /api/complaints/:id - Get single complaint with full details, attachments, history
+  app.get("/api/complaints/:id", (req, res) => {
+    complaints = loadComplaintsFromDb();
+    const item = complaints.find(c => c.id === req.params.id || c.complaintNumber === req.params.id);
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        error: "Complaint record not found with the requested ID / Complaint Number.",
+      });
+    }
+    res.json({ success: true, data: item });
+  });
+
+  // GET /api/complaints/citizen/:email - Get complaints filed by specific citizen
+  app.get("/api/complaints/citizen/:email", (req, res) => {
+    complaints = loadComplaintsFromDb();
+    const queryEmail = decodeURIComponent(req.params.email).toLowerCase().trim();
+    const matches = complaints.filter(c => 
+      (c.citizenEmail && c.citizenEmail.toLowerCase() === queryEmail) ||
+      (c.userEmail && c.userEmail.toLowerCase() === queryEmail)
+    );
+    res.json({
+      success: true,
+      count: matches.length,
+      data: matches,
+    });
+  });
+
+  // POST /api/complaints - Submit and permanently store a new complaint
   app.post("/api/complaints", (req, res) => {
     try {
-      const body = req.body;
+      const body = req.body || {};
+
+      // 1. Mandatory Database Validation: Check required fields
+      const errors: string[] = [];
+
+      const citizenName = (body.citizenName || body.name || "").trim();
+      if (!citizenName || citizenName.length < 2) {
+        errors.push("Citizen Name is required (minimum 2 characters).");
+      }
+
+      const citizenEmail = (body.citizenEmail || body.userEmail || body.email || "").trim();
+      if (!citizenEmail || !citizenEmail.includes("@") || !citizenEmail.includes(".")) {
+        errors.push("A valid Citizen Email / Mail ID is required.");
+      }
+
+      const title = (body.title || "").trim();
+      if (!title || title.length < 3) {
+        errors.push("Complaint Name / Title is required (minimum 3 characters).");
+      }
+
+      const description = (body.description || "").trim();
+      if (!description || description.length < 5) {
+        errors.push("Complaint Description is required (minimum 5 characters).");
+      }
+
+      const category = (body.category || "").trim();
+      if (!category) {
+        errors.push("Complaint Category is required.");
+      }
+
+      const priority = (body.priority || "Medium").trim();
+      if (!["Critical", "High", "Medium", "Low"].includes(priority)) {
+        errors.push("Complaint Priority must be Critical, High, Medium, or Low.");
+      }
+
+      const location = (body.location || "").trim();
+      if (!location) {
+        errors.push("Complaint Location is required.");
+      }
+
+      if (errors.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: "Complaint validation failed: " + errors.join(" "),
+          details: errors
+        });
+      }
+
+      // 2. Reload database to ensure synchronous integrity
+      complaints = loadComplaintsFromDb();
+
+      // 3. Prevent duplicate Complaint Numbers
+      let complaintNumber = body.id || body.complaintNumber;
+      if (complaintNumber) {
+        const existing = complaints.find(c => c.id === complaintNumber || c.complaintNumber === complaintNumber);
+        if (existing) {
+          return res.status(409).json({
+            success: false,
+            error: `Complaint Number ${complaintNumber} already exists in database. Duplicate records cannot be created.`
+          });
+        }
+      } else {
+        complaintNumber = generateUniqueComplaintNumber(complaints);
+      }
+
+      const now = new Date().toISOString();
+      const department = body.department || getDepartmentForCategory(category);
+      const assignedOfficer = body.assignedOfficer || "Elena Vance";
+      const assignedCrew = body.assignedCrew || (priority === "Critical" ? "Rapid Response Unit 01" : "Triage Dispatch Unit 04");
       const lat = body.latitude ?? body.coordinates?.lat ?? 28.6139;
       const lng = body.longitude ?? body.coordinates?.lng ?? 77.2090;
 
+      // Evidence & Attachments
+      const attachments = Array.isArray(body.attachments) && body.attachments.length > 0
+        ? body.attachments
+        : (body.imageUrl ? [{
+            id: `att-${Date.now()}-1`,
+            name: "Photographic Evidence",
+            url: body.imageUrl,
+            type: "image/jpeg",
+            uploadedAt: now
+          }] : []);
+
+      // Initial Status History
+      const statusHistory = Array.isArray(body.statusHistory) && body.statusHistory.length > 0
+        ? body.statusHistory
+        : [{
+            status: body.status || "In Progress",
+            timestamp: now,
+            updatedBy: citizenName,
+            role: "citizen",
+            notes: `Complaint logged by ${citizenName} (${citizenEmail}) and dispatched to ${department}`
+          }];
+
       const newComplaint: CivicComplaint = {
-        id: body.id || `#ICMRS-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`,
-        title: body.title || 'Untitled Hazard',
-        description: body.description || 'Public works hazard reported by citizen.',
-        category: body.category || 'Roads & Bridges',
-        location: body.location || 'NCT of Delhi Civic Ward',
+        id: complaintNumber,
+        complaintNumber: complaintNumber,
+        citizenName,
+        citizenEmail,
+        title,
+        description,
+        category,
+        status: body.status || "In Progress",
+        priority: priority as any,
+        location,
+        coordinates: { lat, lng },
         latitude: lat,
         longitude: lng,
-        coordinates: { lat, lng },
-        status: body.status || 'Pending Triage',
+        dateTime: body.dateTime || now,
+        department,
+        assignedOfficer,
+        assignedCrew,
+        resolutionDetails: body.resolutionDetails || "",
+        attachments,
+        statusHistory,
+        createdAt: now,
+        updatedAt: now,
         pipelineStep: body.pipelineStep || 1,
-        pipelineStepName: body.pipelineStepName || 'Step 1 of 5: Telemetry Received & Dispatched',
+        pipelineStepName: body.pipelineStepName || "Step 1 of 5: Telemetry Received & Dispatched",
         pipelinePercent: body.pipelinePercent || 20,
-        assignedCrew: body.assignedCrew || 'Triage Dispatch Unit 04',
-        timeLogged: body.timeLogged || 'Just now',
-        slaRemaining: body.slaRemaining || '48h 00m SLA standard',
-        slaStatus: body.slaStatus || 'nominal',
+        timeLogged: body.timeLogged || "Just now",
+        slaRemaining: priority === "Critical" ? "4h 00m SLA remaining" : "24h 00m SLA remaining",
+        totalSlaHours: priority === "Critical" ? 4 : 24,
+        slaStatus: priority === "Critical" ? "urgent" : "nominal",
         imageUrl: body.imageUrl,
-        imageAlt: body.imageAlt,
+        imageAlt: body.imageAlt || `Documentary photo of ${category} incident at ${location}`,
         gpsTagged: body.gpsTagged ?? true,
-        officerNotes: body.officerNotes || [],
-        priority: body.priority || 'Medium',
-        citizenToken: body.citizenToken || 'Verified Resident',
+        officerNotes: body.officerNotes || [
+          {
+            id: `n-${Date.now()}`,
+            author: assignedOfficer,
+            role: "Ward Officer (Central Delhi)",
+            time: "Just now",
+            text: `Complaint logged into database. Automated dispatch assigned to ${department}.`
+          }
+        ],
+        citizenToken: body.citizenToken || "Verified Resident",
+        userId: body.userId || citizenEmail,
+        userEmail: citizenEmail
       };
 
+      // Save permanently in database
       complaints.unshift(newComplaint);
-      res.status(201).json({ success: true, data: newComplaint });
+      saveComplaintsToDb(complaints);
+
+      console.log(`[Database] Permanently stored complaint ${newComplaint.id} by citizen ${citizenName} (${citizenEmail})`);
+      return res.status(201).json({
+        success: true,
+        message: "Complaint permanently saved in database.",
+        data: newComplaint
+      });
     } catch (err) {
-      console.error("Error creating complaint:", err);
-      res.status(400).json({ success: false, error: "Invalid complaint data" });
+      console.error("[Database] Error creating complaint:", err);
+      return res.status(500).json({
+        success: false,
+        error: "Internal server error while saving complaint to database."
+      });
     }
   });
 
-  // PATCH /api/complaints/:id - Update complaint status or details
+  // PATCH /api/complaints/:id - Update complaint status, officer notes, resolution details
   app.patch("/api/complaints/:id", (req, res) => {
-    const { id } = req.params;
-    const index = complaints.findIndex((c) => c.id === id);
-    if (index === -1) {
-      return res.status(404).json({ success: false, error: "Complaint not found" });
-    }
+    try {
+      const { id } = req.params;
+      complaints = loadComplaintsFromDb();
+      const index = complaints.findIndex(c => c.id === id || c.complaintNumber === id);
+      if (index === -1) {
+        return res.status(404).json({ success: false, error: "Complaint not found in database" });
+      }
 
-    const updated = {
-      ...complaints[index],
-      ...req.body,
-    };
-    if (req.body.latitude || req.body.longitude) {
-      updated.coordinates = {
-        lat: req.body.latitude ?? updated.coordinates.lat,
-        lng: req.body.longitude ?? updated.coordinates.lng,
+      const existing = complaints[index];
+      const now = new Date().toISOString();
+      const updates = req.body || {};
+
+      // Determine updated status history
+      let statusHistory = [...(existing.statusHistory || [])];
+      if (updates.status && updates.status !== existing.status) {
+        statusHistory.push({
+          status: updates.status,
+          timestamp: now,
+          updatedBy: updates.updatedBy || updates.assignedOfficer || "Municipal Field Officer",
+          role: updates.updaterRole || "officer",
+          notes: updates.statusNote || updates.updateNote || `Complaint status updated from ${existing.status} to ${updates.status}`
+        });
+      }
+
+      const isNowResolved = updates.status === "Resolved" || (updates.pipelineStep === 5 && !existing.resolvedTime);
+      const resolvedTime = isNowResolved ? (updates.resolvedTime || now) : existing.resolvedTime;
+      const resolutionDetails = isNowResolved 
+        ? (updates.resolutionDetails || existing.resolutionDetails || "Incident remediated and inspected according to Municipal Standards §42.")
+        : existing.resolutionDetails;
+
+      const lat = updates.latitude ?? updates.coordinates?.lat ?? existing.coordinates.lat;
+      const lng = updates.longitude ?? updates.coordinates?.lng ?? existing.coordinates.lng;
+
+      const updatedComplaint: CivicComplaint = {
+        ...existing,
+        ...updates,
+        coordinates: { lat, lng },
+        latitude: lat,
+        longitude: lng,
+        statusHistory,
+        resolvedTime,
+        resolutionDetails,
+        updatedAt: now
       };
+
+      complaints[index] = updatedComplaint;
+      saveComplaintsToDb(complaints);
+
+      return res.json({
+        success: true,
+        message: "Complaint updated successfully in database.",
+        data: updatedComplaint
+      });
+    } catch (err) {
+      console.error("[Database] Error updating complaint:", err);
+      return res.status(500).json({ success: false, error: "Internal server error while updating complaint" });
     }
-    complaints[index] = updated;
-    res.json({ success: true, data: updated });
   });
 
   // ==========================================

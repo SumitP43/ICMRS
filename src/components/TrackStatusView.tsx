@@ -20,9 +20,18 @@ import {
   Timer,
   Activity,
   ArrowUpRight,
-  ShieldCheck
+  ShieldCheck,
+  Database,
+  History,
+  User,
+  Mail,
+  Building2,
+  Paperclip,
+  Calendar,
+  FileText
 } from 'lucide-react';
 import { ICMRSLogo } from './ICMRSBranding';
+import { PriorityBadge } from './PriorityBadge';
 
 interface TrackStatusViewProps {
   complaints: CivicComplaint[];
@@ -208,15 +217,7 @@ export const TrackStatusView: React.FC<TrackStatusViewProps> = ({
                   <span className="px-3 py-1 bg-gray-100 text-[#111827] text-[11px] font-bold rounded-full">
                     {selectedComplaint.category}
                   </span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                    selectedComplaint.priority === 'Critical'
-                      ? 'bg-rose-50 text-rose-700 border-rose-200'
-                      : selectedComplaint.priority === 'High'
-                      ? 'bg-amber-50 text-amber-700 border-amber-200'
-                      : 'bg-gray-100 text-gray-700 border-gray-200'
-                  }`}>
-                    {selectedComplaint.priority} Priority
-                  </span>
+                  <PriorityBadge priority={selectedComplaint.priority} size="sm" />
                   <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3 text-emerald-600" />
                     Verified Report
@@ -493,6 +494,196 @@ export const TrackStatusView: React.FC<TrackStatusViewProps> = ({
               )}
             </div>
           </div>
+
+          {/* Municipal Database Permanent Record Card */}
+          <div className="bg-white rounded-[32px] p-7 sm:p-9 border border-gray-200 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <Database className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-['Plus_Jakarta_Sans'] text-[18px] font-extrabold text-[#111827]">
+                    Municipal Database Storage Record
+                  </h3>
+                  <p className="text-[12px] text-gray-500">
+                    Full authoritative schema persisted permanently in municipal database
+                  </p>
+                </div>
+              </div>
+              <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold rounded-full flex items-center gap-1.5 self-start sm:self-auto">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Authoritative Record</span>
+              </span>
+            </div>
+
+            {/* Grid of all required fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[12px]">
+              <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100">
+                <span className="text-gray-400 font-bold uppercase text-[10px] block mb-1">Citizen Name</span>
+                <span className="font-bold text-[#111827] flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-gray-400" />
+                  {selectedComplaint.citizenName || 'Marcus Vance'}
+                </span>
+              </div>
+
+              <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100">
+                <span className="text-gray-400 font-bold uppercase text-[10px] block mb-1">Citizen Email / Mail ID</span>
+                <span className="font-bold text-[#111827] font-mono flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-gray-400" />
+                  {selectedComplaint.citizenEmail || selectedComplaint.userEmail || 'citizen@icmrs.gov'}
+                </span>
+              </div>
+
+              <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100">
+                <span className="text-gray-400 font-bold uppercase text-[10px] block mb-1">Complaint Number</span>
+                <span className="font-mono font-bold text-indigo-600">
+                  {selectedComplaint.complaintNumber || selectedComplaint.id}
+                </span>
+              </div>
+
+              <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100">
+                <span className="text-gray-400 font-bold uppercase text-[10px] block mb-1">Complaint Title / Name</span>
+                <span className="font-bold text-[#111827] truncate block">
+                  {selectedComplaint.title}
+                </span>
+              </div>
+
+              <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100">
+                <span className="text-gray-400 font-bold uppercase text-[10px] block mb-1">Category &amp; Priority</span>
+                <span className="font-bold text-[#111827]">
+                  {selectedComplaint.category} • <span className="text-red-600 font-extrabold">{selectedComplaint.priority}</span>
+                </span>
+              </div>
+
+              <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100">
+                <span className="text-gray-400 font-bold uppercase text-[10px] block mb-1">Complaint Status</span>
+                <span className="font-bold text-indigo-700">
+                  {selectedComplaint.status} ({selectedComplaint.pipelinePercent}% Completed)
+                </span>
+              </div>
+
+              <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100">
+                <span className="text-gray-400 font-bold uppercase text-[10px] block mb-1">Assigned Department</span>
+                <span className="font-bold text-[#111827] flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-gray-400" />
+                  {selectedComplaint.department || 'District 04 Municipal Response Bureau'}
+                </span>
+              </div>
+
+              <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100">
+                <span className="text-gray-400 font-bold uppercase text-[10px] block mb-1">Assigned Officer &amp; Crew</span>
+                <span className="font-bold text-[#111827]">
+                  {selectedComplaint.assignedOfficer || 'Elena Vance'} ({selectedComplaint.assignedCrew})
+                </span>
+              </div>
+
+              <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100">
+                <span className="text-gray-400 font-bold uppercase text-[10px] block mb-1">Location &amp; GPS Coordinates</span>
+                <span className="font-bold text-[#111827] truncate block">
+                  {selectedComplaint.location}
+                  {selectedComplaint.coordinates && (
+                    <span className="font-mono text-[11px] text-gray-400 block font-normal">
+                      Lat: {selectedComplaint.coordinates.lat.toFixed(4)}, Lng: {selectedComplaint.coordinates.lng.toFixed(4)}
+                    </span>
+                  )}
+                </span>
+              </div>
+
+              <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100">
+                <span className="text-gray-400 font-bold uppercase text-[10px] block mb-1">Date &amp; Time Logged</span>
+                <span className="font-mono text-gray-700 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                  {new Date(selectedComplaint.dateTime || selectedComplaint.createdAt || Date.now()).toLocaleString()}
+                </span>
+              </div>
+
+              <div className="sm:col-span-2 p-3.5 bg-gray-50 rounded-xl border border-gray-100">
+                <span className="text-gray-400 font-bold uppercase text-[10px] block mb-1">Resolution Details</span>
+                <p className="font-medium text-gray-700 leading-relaxed">
+                  {selectedComplaint.resolutionDetails || (selectedComplaint.status === 'Resolved' ? 'Remediation completed and verified in compliance with Municipal Safety Standard §42.' : 'Active in queue. Remediation pending work order completion.')}
+                </p>
+              </div>
+
+              <div className="sm:col-span-2 p-3.5 bg-gray-50 rounded-xl border border-gray-100">
+                <span className="text-gray-400 font-bold uppercase text-[10px] block mb-1">Evidence &amp; Attachment Information</span>
+                <div className="flex items-center gap-3">
+                  <Paperclip className="w-4 h-4 text-indigo-600 shrink-0" />
+                  <span className="text-gray-700 font-medium">
+                    {selectedComplaint.attachments && selectedComplaint.attachments.length > 0 
+                      ? `${selectedComplaint.attachments.length} attachment(s) recorded in database: ${selectedComplaint.attachments.map(a => a.name).join(', ')}`
+                      : selectedComplaint.imageUrl
+                      ? 'Photographic evidence recorded: scene_inspection_proof.jpg'
+                      : 'No external attachments uploaded.'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3 bg-white rounded-lg border border-gray-200">
+                <span className="text-[10px] font-mono text-gray-400 block">Created At:</span>
+                <span className="font-mono text-[11px] text-gray-600">
+                  {new Date(selectedComplaint.createdAt || Date.now()).toISOString()}
+                </span>
+              </div>
+
+              <div className="p-3 bg-white rounded-lg border border-gray-200">
+                <span className="text-[10px] font-mono text-gray-400 block">Updated At:</span>
+                <span className="font-mono text-[11px] text-gray-600">
+                  {new Date(selectedComplaint.updatedAt || Date.now()).toISOString()}
+                </span>
+              </div>
+            </div>
+
+            {/* Complaint Status History Timeline */}
+            <div className="pt-4 border-t border-gray-100">
+              <div className="flex items-center gap-2 mb-3">
+                <History className="w-4 h-4 text-indigo-600" />
+                <h4 className="font-['Plus_Jakarta_Sans'] text-[15px] font-bold text-[#111827]">
+                  Complaint Status History &amp; Audit Trail
+                </h4>
+              </div>
+
+              <div className="space-y-3">
+                {selectedComplaint.statusHistory && selectedComplaint.statusHistory.length > 0 ? (
+                  selectedComplaint.statusHistory.map((hist, idx) => (
+                    <div key={idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 text-[12px]">
+                      <span className="w-2 h-2 rounded-full bg-indigo-600 mt-1.5 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-[#111827]">{hist.status}</span>
+                          <span className="text-[10px] font-mono text-gray-400">
+                            {new Date(hist.timestamp).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-gray-600 mt-0.5">{hist.notes}</p>
+                        <span className="text-[11px] text-gray-400 font-medium mt-1 block">
+                          Updated by: {hist.updatedBy} ({hist.role})
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 text-[12px]">
+                    <span className="w-2 h-2 rounded-full bg-indigo-600 mt-1.5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-bold text-[#111827]">{selectedComplaint.status}</span>
+                        <span className="text-[10px] font-mono text-gray-400">
+                          {new Date(selectedComplaint.dateTime || selectedComplaint.createdAt || Date.now()).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-gray-600 mt-0.5">
+                        Complaint permanently recorded in municipal database. Dispatched to {selectedComplaint.department || 'District 04 Municipal Response Bureau'}.
+                      </p>
+                      <span className="text-[11px] text-gray-400 font-medium mt-1 block">
+                        Updated by: {selectedComplaint.citizenName || 'Marcus Vance'} (citizen)
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Right 4-col: Crew telemetry, Contest Resolution, Print Report */}
@@ -649,15 +840,7 @@ export const TrackStatusView: React.FC<TrackStatusViewProps> = ({
                     <span className="font-mono text-xs font-bold text-indigo-600">{c.id}</span>
                     <span className="text-xs text-gray-400">•</span>
                     <span className="text-xs font-semibold text-gray-700">{c.category}</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      c.priority === 'Critical'
-                        ? 'bg-rose-100 text-rose-800'
-                        : c.priority === 'High'
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {c.priority}
-                    </span>
+                    <PriorityBadge priority={c.priority} size="xs" />
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                       c.status === 'Resolved'
                         ? 'bg-emerald-100 text-emerald-800'

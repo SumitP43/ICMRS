@@ -50,12 +50,38 @@ export interface OfficerNote {
   text: string;
 }
 
+export interface ComplaintStatusHistoryEntry {
+  status: string;
+  timestamp: string;
+  updatedBy: string;
+  role?: string;
+  notes?: string;
+}
+
+export interface ComplaintAttachment {
+  id: string;
+  name: string;
+  url: string;
+  type: string;
+  size?: number;
+  uploadedAt: string;
+}
+
 export interface CivicComplaint {
   id: string;
+  complaintNumber?: string;
   title: string;
   description: string;
   category: string;
   location: string;
+  citizenName?: string;
+  citizenEmail?: string;
+  department?: string;
+  assignedOfficer?: string;
+  resolutionDetails?: string;
+  dateTime?: string;
+  attachments?: ComplaintAttachment[];
+  statusHistory?: ComplaintStatusHistoryEntry[];
   nodeCode?: string;
   coordinates: {
     lat: number;

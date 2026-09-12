@@ -4,6 +4,7 @@ import { Star, ChevronDown, ChevronUp, AlertCircle, Phone, MapPin, Sparkles, Fla
 import { CivicLeafletMap } from './CivicLeafletMap';
 import { useAuth } from '../context/AuthContext';
 import { ICMRSLogo } from './ICMRSBranding';
+import { PriorityBadge } from './PriorityBadge';
 
 export type MetricFilterType = 'all' | 'active' | 'resolved' | 'sla';
 
@@ -482,7 +483,13 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
                 displayedComplaints.map(ticket => (
                 <div 
                   key={ticket.id}
-                  className="bg-white rounded-[28px] sm:rounded-[32px] p-6 sm:p-8 shadow-sm hover:shadow-md transition-all border border-gray-200 flex flex-col"
+                  className={`bg-white rounded-[28px] sm:rounded-[32px] p-6 sm:p-8 shadow-sm hover:shadow-md transition-all border flex flex-col ${
+                    ticket.priority === 'Critical' && ticket.status !== 'Resolved'
+                      ? 'border-rose-200 ring-1 ring-rose-100/70 shadow-rose-50/50'
+                      : ticket.priority === 'High' && ticket.status !== 'Resolved'
+                      ? 'border-amber-200/80 shadow-amber-50/30'
+                      : 'border-gray-200'
+                  }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100">
                     <div className="flex flex-wrap items-center gap-2">
@@ -496,6 +503,7 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
                       <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-[11px] font-semibold">
                         {ticket.category}
                       </span>
+                      <PriorityBadge priority={ticket.priority} size="sm" />
                     </div>
 
                     {/* SLA Countdown Pill */}
@@ -681,9 +689,12 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <span className="px-2.5 py-1 bg-gray-100 rounded-xl font-mono text-[12px] text-[#111827] font-bold">
-                        {resolved.id}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-2.5 py-1 bg-gray-100 rounded-xl font-mono text-[12px] text-[#111827] font-bold">
+                          {resolved.id}
+                        </span>
+                        <PriorityBadge priority={resolved.priority} size="xs" />
+                      </div>
                       <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-full flex items-center gap-1 border border-indigo-100">
                         <span className="material-symbols-outlined text-[14px]">check_circle</span>
                         {resolved.resolvedTime}

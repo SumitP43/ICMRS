@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CivicComplaint } from '../types';
 import { X, Upload, CheckCircle, Camera } from 'lucide-react';
+import { PriorityBadge } from './PriorityBadge';
 
 interface UploadPhotoModalProps {
   complaint: CivicComplaint | null;
@@ -48,9 +49,12 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
               <h3 className="font-['Plus_Jakarta_Sans'] font-extrabold text-[17px] text-[#111827]">
                 Upload Evidence Snapshot
               </h3>
-              <span className="font-mono text-[12px] font-bold text-indigo-600">
-                {complaint.id}
-              </span>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="font-mono text-[12px] font-bold text-indigo-600">
+                  {complaint.id}
+                </span>
+                <PriorityBadge priority={complaint.priority} size="xs" />
+              </div>
             </div>
           </div>
           <button 

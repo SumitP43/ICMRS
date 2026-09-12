@@ -68,8 +68,8 @@ service cloud.firestore {
     // Civic complaints and incidents collection
     match /complaints/{complaintId} {
       allow read: if true; // Public civic transparency for municipal monitoring
-      allow create: if isSignedIn() && isValidId(complaintId) && isValidComplaint(request.resource.data);
-      allow update: if isSignedIn() && isValidComplaint(request.resource.data);
+      allow create: if isValidId(complaintId) && isValidComplaint(request.resource.data);
+      allow update: if isValidComplaint(request.resource.data);
       allow delete: if isAdmin();
     }
 

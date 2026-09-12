@@ -10,6 +10,7 @@ if (typeof window !== 'undefined') {
 import 'leaflet.heat';
 
 import { CivicComplaint } from '../types';
+import { PriorityBadge } from './PriorityBadge';
 import { 
   Flame, 
   MapPin, 
@@ -831,17 +832,14 @@ export const CivicLeafletMap: React.FC<CivicLeafletMapProps> = ({
                       <span className="font-mono text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
                         {complaint.id}
                       </span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                        complaint.status === 'Resolved'
-                          ? 'bg-green-100 text-green-700'
-                          : complaint.priority === 'Critical'
-                          ? 'bg-red-100 text-red-700'
-                          : complaint.priority === 'High'
-                          ? 'bg-orange-100 text-orange-700'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {complaint.status === 'Resolved' ? 'Resolved' : `${complaint.priority} Priority`}
-                      </span>
+                      {complaint.status === 'Resolved' ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          Resolved
+                        </span>
+                      ) : (
+                        <PriorityBadge priority={complaint.priority} size="xs" />
+                      )}
                     </div>
 
                     <h4 className="font-['Plus_Jakarta_Sans'] font-extrabold text-[13px] leading-tight mb-1 text-[#111827]">

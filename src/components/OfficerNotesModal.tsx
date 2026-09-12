@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CivicComplaint, OfficerNote } from '../types';
 import { X, MessageSquare, Send, UserCheck, Shield } from 'lucide-react';
+import { PriorityBadge } from './PriorityBadge';
 
 interface OfficerNotesModalProps {
   complaint: CivicComplaint | null;
@@ -48,9 +49,15 @@ export const OfficerNotesModal: React.FC<OfficerNotesModalProps> = ({
               <h3 className="font-['Plus_Jakarta_Sans'] font-extrabold text-[17px] text-[#111827]">
                 Official Field Logs & Notes
               </h3>
-              <span className="font-mono text-[12px] font-bold text-indigo-600">
-                {complaint.id} — {complaint.location}
-              </span>
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                <span className="font-mono text-[12px] font-bold text-indigo-600">
+                  {complaint.id}
+                </span>
+                <PriorityBadge priority={complaint.priority} size="xs" />
+                <span className="text-[11px] text-gray-500 truncate max-w-[200px]">
+                  • {complaint.location}
+                </span>
+              </div>
             </div>
           </div>
           <button 

@@ -314,10 +314,15 @@ function ICMRSApplication() {
     knownComplaintPrioritiesRef.current.set(newComplaint.id, newComplaint.priority);
 
     try {
-      await saveComplaint(newComplaint, {
-        uid: currentUser?.id || 'citizen-anon',
-        email: currentUser?.email || null
+      const saved = await saveComplaint(newComplaint, {
+        uid: currentUser?.id || newComplaint.userId || 'citizen-anon',
+        email: currentUser?.email || newComplaint.citizenEmail || null,
+        name: currentUser?.name || newComplaint.citizenName || null
       });
+      if (saved) {
+        setComplaints(prev => [saved, ...prev.filter(c => c.id !== saved.id && c.id !== newComplaint.id)]);
+        setSelectedComplaint(saved);
+      }
     } catch (err) {
       console.error('Failed to persist complaint:', err);
     }

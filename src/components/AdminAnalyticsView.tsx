@@ -39,6 +39,7 @@ import {
 } from 'recharts';
 import { CivicComplaint } from '../types';
 import { ICMRSLogo } from './ICMRSBranding';
+import { CriticalEscalationHeatmap } from './CriticalEscalationHeatmap';
 
 interface AdminAnalyticsViewProps {
   complaints?: CivicComplaint[];
@@ -54,6 +55,61 @@ interface DailyFrequencyPoint {
   mediumLow: number;
   highlight?: string;
 }
+
+// Recharts custom high-contrast tooltip
+const AdminChartTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload as DailyFrequencyPoint;
+    return (
+      <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-gray-200 text-[12px] min-w-[210px] z-50">
+        <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
+          <span className="font-extrabold text-[#111827]">{data.fullDate}</span>
+          <span className="text-[10px] font-mono font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+            {data.dayOfWeek}
+          </span>
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between font-extrabold text-indigo-600 bg-indigo-50/70 -mx-1 px-2 py-1 rounded-lg">
+            <span>New Complaints Filed:</span>
+            <span className="text-[15px] font-mono">{data.total}</span>
+          </div>
+
+          {data.highlight && (
+            <div className="text-[11px] text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200 font-semibold">
+              ⚡ {data.highlight}
+            </div>
+          )}
+
+          <div className="pt-1.5 space-y-1 border-t border-gray-100 text-[11px]">
+            <div className="flex items-center justify-between text-gray-600">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-red-500" />
+                Critical Priority:
+              </span>
+              <span className="font-mono font-bold text-red-600">{data.critical}</span>
+            </div>
+            <div className="flex items-center justify-between text-gray-600">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-orange-500" />
+                High Priority:
+              </span>
+              <span className="font-mono font-bold text-orange-600">{data.high}</span>
+            </div>
+            <div className="flex items-center justify-between text-gray-600">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                Standard / Medium:
+              </span>
+              <span className="font-mono font-bold text-yellow-600">{data.mediumLow}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
 
 export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ complaints: propComplaints }) => {
   const [complaints, setComplaints] = useState<CivicComplaint[]>(propComplaints || []);
@@ -195,61 +251,6 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ complain
       weekOverWeekPct: Number(weekOverWeekPct)
     };
   }, [chartData]);
-
-  // Recharts custom high-contrast tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload as DailyFrequencyPoint;
-      return (
-        <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-gray-200 text-[12px] min-w-[210px] z-50">
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
-            <span className="font-extrabold text-[#111827]">{data.fullDate}</span>
-            <span className="text-[10px] font-mono font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
-              {data.dayOfWeek}
-            </span>
-          </div>
-
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between font-extrabold text-indigo-600 bg-indigo-50/70 -mx-1 px-2 py-1 rounded-lg">
-              <span>New Complaints Filed:</span>
-              <span className="text-[15px] font-mono">{data.total}</span>
-            </div>
-
-            {data.highlight && (
-              <div className="text-[11px] text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200 font-semibold">
-                ⚡ {data.highlight}
-              </div>
-            )}
-
-            <div className="pt-1.5 space-y-1 border-t border-gray-100 text-[11px]">
-              <div className="flex items-center justify-between text-gray-600">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-red-500" />
-                  Critical Priority:
-                </span>
-                <span className="font-mono font-bold text-red-600">{data.critical}</span>
-              </div>
-              <div className="flex items-center justify-between text-gray-600">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-orange-500" />
-                  High Priority:
-                </span>
-                <span className="font-mono font-bold text-orange-600">{data.high}</span>
-              </div>
-              <div className="flex items-center justify-between text-gray-600">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                  Standard / Medium:
-                </span>
-                <span className="font-mono font-bold text-yellow-600">{data.mediumLow}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
 
   const departments = [
     { name: 'Roads & Bridges', total: 42, onTime: 39, compliance: '92.8%', color: '#006194' },
@@ -666,7 +667,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ complain
                 axisLine={false} 
                 tick={{ fill: '#64748B', fontSize: 11, fontWeight: 500 }}
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<AdminChartTooltip />} />
               <Legend 
                 verticalAlign="top" 
                 align="right" 
@@ -717,6 +718,11 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ complain
           </div>
           <span className="font-mono mt-1 sm:mt-0">Source: Central Ward Telemetry Dispatch Log • Recharts Engine</span>
         </div>
+      </div>
+
+      {/* Critical Escalations & Emergency Response Time Heat Map Overlay Component */}
+      <div className="mb-8">
+        <CriticalEscalationHeatmap complaints={complaints} />
       </div>
 
       {/* Charts & Department Breakdown */}

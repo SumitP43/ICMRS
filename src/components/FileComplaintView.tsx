@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CivicComplaint } from '../types';
 import { 
   AlertTriangle, 
@@ -10,7 +10,9 @@ import {
   CheckCircle2, 
   ArrowRight,
   Upload,
-  Info
+  Info,
+  AlertCircle,
+  ArrowDownCircle
 } from 'lucide-react';
 import { CivicLocationPicker } from './CivicLocationPicker';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +28,8 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
 }) => {
   const { currentUser } = useAuth();
   const [category, setCategory] = useState('Roads & Bridges');
+  const [citizenName, setCitizenName] = useState(currentUser?.name || 'Marcus Vance');
+  const [citizenEmail, setCitizenEmail] = useState(currentUser?.email || 'citizen@icmrs.gov');
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('');
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number }>({ lat: 28.6315, lng: 77.2167 });
@@ -35,6 +39,11 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
   const [liveGpsLocked, setLiveGpsLocked] = useState(false);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [locError, setLocError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (currentUser?.name && !citizenName) setCitizenName(currentUser.name);
+    if (currentUser?.email && citizenEmail === 'citizen@icmrs.gov') setCitizenEmail(currentUser.email);
+  }, [currentUser]);
 
   const handleCaptureLiveLocation = () => {
     if (!('geolocation' in navigator)) {
@@ -130,37 +139,81 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const now = new Date().toISOString();
     const newId = `#ICMRS-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const departmentMap: Record<string, string> = {
+      'Roads & Bridges': 'NDMC Roads & Infrastructure Directorate',
+      'Electrical & Lighting': 'BSES Power & Municipal Lighting Wing',
+      'Water & Sanitation': 'Delhi Jal Board Hydrology Unit',
+      'Public Safety & Transit': 'Delhi Traffic Police & PWD Telemetry',
+      'Parks & Forestry': 'Municipal Parks & Forestry Directorate',
+      'Waste Management': 'Clean Delhi Solid Waste Response'
+    };
+
+    const assignedDepartment = departmentMap[category] || 'District 04 Municipal Response Bureau';
+    const finalCitizenName = citizenName.trim() || currentUser?.name || 'Marcus Vance';
+    const finalCitizenEmail = citizenEmail.trim() || currentUser?.email || 'citizen@icmrs.gov';
 
     const newTicket: CivicComplaint = {
       id: newId,
-      title: title || `${category} Hazard at ${location || 'Delhi NCT'}`,
-      description: description || 'Citizen reported public infrastructure issue requiring municipal inspection.',
+      complaintNumber: newId,
+      title: title.trim() || `${category} Hazard at ${location.trim() || 'Delhi NCT'}`,
+      description: description.trim() || 'Citizen reported public infrastructure issue requiring municipal inspection.',
       category: category,
-      location: location || 'Connaught Place, New Delhi',
+      location: location.trim() || 'Connaught Place, New Delhi',
       coordinates: coordinates,
+      latitude: coordinates.lat,
+      longitude: coordinates.lng,
       status: 'In Progress',
+      priority: priority,
+      citizenName: finalCitizenName,
+      citizenEmail: finalCitizenEmail,
+      department: assignedDepartment,
+      assignedOfficer: 'Elena Vance',
+      assignedCrew: aiAnalysisResult?.crewType || 'Delhi Municipal Rapid Unit',
+      resolutionDetails: '',
+      dateTime: now,
+      createdAt: now,
+      updatedAt: now,
       pipelineStep: 1,
       pipelineStepName: 'Step 1 of 5: Telemetry Received & Dispatched',
       pipelinePercent: 20,
-      assignedCrew: aiAnalysisResult?.crewType || 'Delhi Municipal Rapid Unit',
       timeLogged: 'Just now',
       slaRemaining: priority === 'Critical' ? '4h 00m SLA remaining' : '24h 00m SLA remaining',
       totalSlaHours: priority === 'Critical' ? 4 : 24,
       slaStatus: priority === 'Critical' ? 'urgent' : 'nominal',
       imageUrl: photoUrl,
+      imageAlt: `Documentary civic photo of ${category} hazard at ${location || 'Delhi NCT'}`,
+      attachments: photoUrl ? [
+        {
+          id: `att-${Date.now()}`,
+          name: 'Scene Photographic Evidence',
+          url: photoUrl,
+          type: 'image/jpeg',
+          uploadedAt: now
+        }
+      ] : [],
+      statusHistory: [
+        {
+          status: 'In Progress',
+          timestamp: now,
+          updatedBy: finalCitizenName,
+          role: 'citizen',
+          notes: `Complaint permanently registered in database and dispatched to ${assignedDepartment}`
+        }
+      ],
       gpsTagged: true,
-      priority: priority,
       citizenToken: currentUser?.badgeNumber || 'Verified Resident',
-      userId: currentUser?.id,
-      userEmail: currentUser?.email,
+      userId: currentUser?.id || finalCitizenEmail,
+      userEmail: finalCitizenEmail,
       officerNotes: [
         {
           id: `n-${Date.now()}`,
           author: 'Elena Vance',
           role: 'Chief Field Auditor (Central Delhi)',
           time: 'Just now',
-          text: 'Ticket ingested into municipal dispatch. Auto-routing active.'
+          text: `Ticket ingested into municipal dispatch. Auto-routing active to ${assignedDepartment}.`
         }
       ]
     };
@@ -189,23 +242,74 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
       </div>
 
       {submittedTicket ? (
-        <div className="bg-white rounded-[32px] p-10 border border-gray-200 shadow-sm text-center max-w-xl mx-auto">
-          <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4 animate-bounce" />
-          <span className="font-mono text-[14px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3.5 py-1 rounded-full">
-            {submittedTicket.id}
-          </span>
-          <h2 className="font-['Plus_Jakarta_Sans'] text-[26px] font-extrabold text-[#111827] mt-4">
-            Case Successfully Registered!
+        <div className="bg-white rounded-[32px] p-8 sm:p-10 border border-gray-200 shadow-sm text-center max-w-2xl mx-auto">
+          <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto mb-3 animate-bounce" />
+          
+          <div className="inline-flex items-center gap-2 mb-2">
+            <span className="font-mono text-[14px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3.5 py-1 rounded-full">
+              Complaint Number: {submittedTicket.complaintNumber || submittedTicket.id}
+            </span>
+          </div>
+
+          <h2 className="font-['Plus_Jakarta_Sans'] text-[26px] font-extrabold text-[#111827] mt-1">
+            Complaint Permanently Stored in Database!
           </h2>
-          <p className="text-[14px] text-gray-500 mt-2 mb-8 font-normal">
-            Dispatched to <span className="font-bold text-[#111827]">{submittedTicket.assignedCrew}</span>. You can track real-time crew milestones and SLA counters in the tracker.
+          <p className="text-[13px] text-gray-500 mt-1 mb-6 font-normal">
+            Your complaint has been validated, assigned a unique complaint number, and recorded with full status history.
           </p>
+
+          {/* Stored Database Fields Summary */}
+          <div className="text-left bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-6 space-y-2.5 text-[12px]">
+            <div className="flex justify-between items-center border-b border-gray-200/80 pb-2">
+              <span className="text-gray-500 font-medium">Citizen Name &amp; Mail ID:</span>
+              <span className="font-bold text-[#111827] font-mono">
+                {submittedTicket.citizenName} ({submittedTicket.citizenEmail})
+              </span>
+            </div>
+            <div className="flex justify-between items-center border-b border-gray-200/80 pb-2">
+              <span className="text-gray-500 font-medium">Complaint Name / Title:</span>
+              <span className="font-bold text-[#111827] max-w-xs truncate text-right">
+                {submittedTicket.title}
+              </span>
+            </div>
+            <div className="flex justify-between items-center border-b border-gray-200/80 pb-2">
+              <span className="text-gray-500 font-medium">Category &amp; Priority:</span>
+              <span className="font-bold text-[#111827]">
+                {submittedTicket.category} • <span className="text-red-600 font-extrabold">{submittedTicket.priority}</span>
+              </span>
+            </div>
+            <div className="flex justify-between items-center border-b border-gray-200/80 pb-2">
+              <span className="text-gray-500 font-medium">Assigned Department:</span>
+              <span className="font-bold text-indigo-700">
+                {submittedTicket.department}
+              </span>
+            </div>
+            <div className="flex justify-between items-center border-b border-gray-200/80 pb-2">
+              <span className="text-gray-500 font-medium">Assigned Officer &amp; Crew:</span>
+              <span className="font-bold text-[#111827]">
+                {submittedTicket.assignedOfficer} ({submittedTicket.assignedCrew})
+              </span>
+            </div>
+            <div className="flex justify-between items-center border-b border-gray-200/80 pb-2">
+              <span className="text-gray-500 font-medium">Location:</span>
+              <span className="font-bold text-[#111827] max-w-xs truncate text-right">
+                {submittedTicket.location}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 font-medium">Date &amp; Time Logged:</span>
+              <span className="font-mono text-gray-700">
+                {new Date(submittedTicket.dateTime || submittedTicket.createdAt || Date.now()).toLocaleString()}
+              </span>
+            </div>
+          </div>
+
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5">
             <button
               onClick={() => onNavigateToTrack(submittedTicket)}
-              className="w-full sm:w-auto px-6 py-3 bg-indigo-600 text-white rounded-xl text-[14px] font-bold hover:bg-indigo-700 flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all"
+              className="w-full sm:w-auto px-6 py-3 bg-indigo-600 text-white rounded-xl text-[14px] font-bold hover:bg-indigo-700 flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer"
             >
-              <span>Track Ticket Live</span>
+              <span>Track Ticket in Telemetry Matrix</span>
               <ArrowRight className="w-4 h-4" />
             </button>
             <button
@@ -215,9 +319,9 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
                 setDescription('');
                 setLocation('');
               }}
-              className="w-full sm:w-auto px-5 py-3 bg-gray-100 text-[#111827] rounded-xl text-[14px] font-bold hover:bg-gray-200 transition-colors"
+              className="w-full sm:w-auto px-5 py-3 bg-gray-100 text-[#111827] rounded-xl text-[14px] font-bold hover:bg-gray-200 transition-colors cursor-pointer"
             >
-              File Another Case
+              File Another Complaint
             </button>
           </div>
         </div>
@@ -266,6 +370,38 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
               <label className="block text-[12px] uppercase tracking-wider font-extrabold text-[#111827]">
                 2. Incident Location & Specifics
               </label>
+
+              {/* Citizen Details Recorded with Complaint */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-[11px] text-gray-400 font-bold uppercase mb-1.5">
+                    Citizen Name
+                  </label>
+                  <input
+                    type="text"
+                    id="citizen-name-input"
+                    value={citizenName}
+                    onChange={(e) => setCitizenName(e.target.value)}
+                    placeholder="Full Legal Name"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-[14px] text-[#111827] focus:bg-white focus:outline-none focus:border-indigo-600 font-medium"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-gray-400 font-bold uppercase mb-1.5">
+                    Citizen Email / Mail ID
+                  </label>
+                  <input
+                    type="email"
+                    id="citizen-email-input"
+                    value={citizenEmail}
+                    onChange={(e) => setCitizenEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-[14px] text-[#111827] focus:bg-white focus:outline-none focus:border-indigo-600 font-medium"
+                    required
+                  />
+                </div>
+              </div>
 
               <div>
                 <label className="block text-[11px] text-gray-400 font-bold uppercase mb-1.5">
@@ -460,22 +596,38 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
                   Priority Classification
                 </label>
                 <div className="grid grid-cols-2 gap-2.5">
-                  {(['Critical', 'High', 'Medium', 'Low'] as const).map(p => (
-                    <button
-                      type="button"
-                      key={p}
-                      onClick={() => setPriority(p)}
-                      className={`py-2.5 px-3 rounded-xl text-[12px] font-bold border transition-all ${
-                        priority === p
-                          ? p === 'Critical'
-                            ? 'bg-red-600 text-white border-red-600 shadow-sm'
-                            : 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  ))}
+                  {(['Critical', 'High', 'Medium', 'Low'] as const).map(p => {
+                    const isSelected = priority === p;
+                    const IconComp = 
+                      p === 'Critical' ? ShieldAlert :
+                      p === 'High' ? AlertTriangle :
+                      p === 'Medium' ? AlertCircle :
+                      ArrowDownCircle;
+
+                    return (
+                      <button
+                        type="button"
+                        key={p}
+                        onClick={() => setPriority(p)}
+                        className={`py-2.5 px-3 rounded-xl text-[12px] font-bold border transition-all flex items-center justify-center gap-1.5 ${
+                          isSelected
+                            ? p === 'Critical'
+                              ? 'bg-red-600 text-white border-red-600 shadow-sm'
+                              : p === 'High'
+                              ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
+                              : 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                            : p === 'Critical'
+                            ? 'bg-rose-50/70 text-rose-700 border-rose-200 hover:bg-rose-100/70'
+                            : p === 'High'
+                            ? 'bg-amber-50/70 text-amber-800 border-amber-200 hover:bg-amber-100/70'
+                            : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                        }`}
+                      >
+                        <IconComp className="w-3.5 h-3.5 shrink-0" />
+                        <span>{p}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

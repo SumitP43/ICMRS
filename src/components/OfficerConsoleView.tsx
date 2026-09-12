@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CivicComplaint, OfficerNote } from '../types';
+import { CivicComplaint, OfficerNote, ComplaintStatusHistoryEntry } from '../types';
 import { 
   ShieldCheck, 
   Users, 
@@ -27,6 +27,7 @@ import {
   playCriticalEscalationChime 
 } from '../audio/audioNotificationService';
 import { ICMRSLogo } from './ICMRSBranding';
+import { PriorityBadge } from './PriorityBadge';
 
 interface OfficerConsoleViewProps {
   complaints: CivicComplaint[];
@@ -91,6 +92,18 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
     };
 
     const isResolved = nextStep === 5;
+    const now = new Date().toISOString();
+
+    const historyEntry: ComplaintStatusHistoryEntry = {
+      status: isResolved ? 'Resolved' : 'In Progress',
+      timestamp: now,
+      updatedBy: 'Elena Vance (Ward Officer 04)',
+      role: 'officer',
+      notes: isResolved 
+        ? 'Remediation completed and certified in compliance with Municipal Safety Standard §42'
+        : `Pipeline advanced: ${stepNames[nextStep]}`
+    };
+
     const updated: CivicComplaint = {
       ...complaint,
       pipelineStep: nextStep,
@@ -100,6 +113,11 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
       slaStatus: isResolved ? 'resolved' : complaint.slaStatus,
       slaRemaining: isResolved ? 'Certified Closed' : complaint.slaRemaining,
       resolvedTime: isResolved ? 'Just now' : complaint.resolvedTime,
+      resolutionDetails: isResolved 
+        ? (complaint.resolutionDetails || 'Full remediation completed. Certified in compliance with Municipal Safety Standard §42.') 
+        : complaint.resolutionDetails,
+      statusHistory: [...(complaint.statusHistory || []), historyEntry],
+      updatedAt: now,
       inspector: isResolved ? {
         name: 'Elena Vance',
         title: 'Ward Officer 04',
@@ -335,18 +353,7 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
                         <span className="font-mono text-[12px] sm:text-[13px] font-black text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2.5 py-0.5 rounded-lg tracking-wide">
                           {item.id}
                         </span>
-                        <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5 ${
-                          item.priority === 'Critical' 
-                            ? 'bg-red-50 text-red-800 border border-red-200' 
-                            : item.priority === 'High'
-                            ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                            : 'bg-gray-100 text-gray-700 border border-gray-200'
-                        }`}>
-                          {item.priority === 'Critical' && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>
-                          )}
-                          <span>{item.priority} Priority</span>
-                        </span>
+                        <PriorityBadge priority={item.priority} size="sm" />
                         <span className="text-[11px] font-semibold text-gray-500 bg-gray-50 border border-gray-200/80 px-2 py-0.5 rounded-full">
                           {item.category}
                         </span>
@@ -365,7 +372,7 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
                         {item.title}
                       </h4>
 
-                      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-[12px] sm:text-[13px] text-gray-600 font-medium">
+                      <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-2 text-[12px] sm:text-[13px] text-gray-600 font-medium">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                           <span className="truncate">{item.location}</span>
@@ -373,7 +380,12 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
                         <div className="flex items-center gap-1.5 min-w-0">
                           <Users className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                           <span className="truncate">
-                            Assigned Crew: <strong className="text-[#111827] font-bold">{item.assignedCrew}</strong>
+                            Crew: <strong className="text-[#111827] font-bold">{item.assignedCrew}</strong>
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 min-w-0 text-gray-500">
+                          <span className="truncate">
+                            Citizen: <strong className="text-gray-900 font-bold">{item.citizenName || 'Marcus Vance'}</strong> ({item.citizenEmail || item.userEmail || 'citizen@icmrs.gov'})
                           </span>
                         </div>
                       </div>
