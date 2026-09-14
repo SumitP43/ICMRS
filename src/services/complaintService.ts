@@ -24,8 +24,24 @@ let cachedComplaints: CivicComplaint[] = [];
 let hasSeededInitial = false;
 const subscribers = new Set<(complaints: CivicComplaint[]) => void>();
 
+export function sanitizeComplaint(raw: any): CivicComplaint {
+  if (!raw) return raw;
+  return {
+    ...raw,
+    id: raw.id || raw.complaintNumber || `#ICMRS-${Date.now()}`,
+    title: raw.title || 'Civic Incident',
+    category: raw.category || 'Roads & Bridges',
+    status: raw.status || 'In Progress',
+    priority: raw.priority || 'Medium',
+    location: raw.location || 'Delhi NCT',
+    officerNotes: Array.isArray(raw.officerNotes) ? raw.officerNotes : [],
+    statusHistory: Array.isArray(raw.statusHistory) ? raw.statusHistory : [],
+    attachments: Array.isArray(raw.attachments) ? raw.attachments : [],
+  };
+}
+
 function notifySubscribers() {
-  const data = [...cachedComplaints];
+  const data = cachedComplaints.map(sanitizeComplaint);
   subscribers.forEach((callback) => {
     try {
       callback(data);
@@ -41,13 +57,13 @@ function loadLocalData(): CivicComplaint[] {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+        return parsed.map(sanitizeComplaint);
       }
     }
   } catch (e) {
     console.warn('[ComplaintService] Local storage load notice:', e);
   }
-  return [...INITIAL_COMPLAINTS];
+  return INITIAL_COMPLAINTS.map(sanitizeComplaint);
 }
 
 cachedComplaints = loadLocalData();
@@ -105,10 +121,10 @@ export function subscribeComplaints(
         const firestoreList: CivicComplaint[] = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data() as CivicComplaint;
-          firestoreList.push({
+          firestoreList.push(sanitizeComplaint({
             ...data,
             id: docSnap.id || data.id,
-          });
+          }));
         });
 
         // Sort complaints: newest or highest priority first

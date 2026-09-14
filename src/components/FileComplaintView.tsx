@@ -252,22 +252,22 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
           </div>
 
           <h2 className="font-['Plus_Jakarta_Sans'] text-[26px] font-extrabold text-[#111827] mt-1">
-            Complaint Permanently Stored in Database!
+            Complaint Dispatched Successfully!
           </h2>
           <p className="text-[13px] text-gray-500 mt-1 mb-6 font-normal">
-            Your complaint has been validated, assigned a unique complaint number, and recorded with full status history.
+            Your incident report has been registered in the municipal system and routed to District 04 field response units.
           </p>
 
-          {/* Stored Database Fields Summary */}
+          {/* Incident Summary Card */}
           <div className="text-left bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-6 space-y-2.5 text-[12px]">
             <div className="flex justify-between items-center border-b border-gray-200/80 pb-2">
-              <span className="text-gray-500 font-medium">Citizen Name &amp; Mail ID:</span>
-              <span className="font-bold text-[#111827] font-mono">
-                {submittedTicket.citizenName} ({submittedTicket.citizenEmail})
+              <span className="text-gray-500 font-medium">Citizen Name:</span>
+              <span className="font-bold text-[#111827]">
+                {submittedTicket.citizenName}
               </span>
             </div>
             <div className="flex justify-between items-center border-b border-gray-200/80 pb-2">
-              <span className="text-gray-500 font-medium">Complaint Name / Title:</span>
+              <span className="text-gray-500 font-medium">Incident Title:</span>
               <span className="font-bold text-[#111827] max-w-xs truncate text-right">
                 {submittedTicket.title}
               </span>
@@ -285,19 +285,13 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
               </span>
             </div>
             <div className="flex justify-between items-center border-b border-gray-200/80 pb-2">
-              <span className="text-gray-500 font-medium">Assigned Officer &amp; Crew:</span>
-              <span className="font-bold text-[#111827]">
-                {submittedTicket.assignedOfficer} ({submittedTicket.assignedCrew})
-              </span>
-            </div>
-            <div className="flex justify-between items-center border-b border-gray-200/80 pb-2">
               <span className="text-gray-500 font-medium">Location:</span>
               <span className="font-bold text-[#111827] max-w-xs truncate text-right">
                 {submittedTicket.location}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-500 font-medium">Date &amp; Time Logged:</span>
+              <span className="text-gray-500 font-medium">Dispatched At:</span>
               <span className="font-mono text-gray-700">
                 {new Date(submittedTicket.dateTime || submittedTicket.createdAt || Date.now()).toLocaleString()}
               </span>

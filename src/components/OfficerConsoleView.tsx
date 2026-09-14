@@ -424,7 +424,7 @@ export const OfficerConsoleView: React.FC<OfficerConsoleViewProps> = ({
                           title="View or Add Field Notes"
                         >
                           <MessageSquare className="w-3.5 h-3.5 text-gray-500" />
-                          <span>Notes ({item.officerNotes.length})</span>
+                          <span>Notes ({(item.officerNotes || []).length})</span>
                         </button>
 
                         <button

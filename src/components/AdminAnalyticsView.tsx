@@ -40,6 +40,7 @@ import {
 import { CivicComplaint } from '../types';
 import { ICMRSLogo } from './ICMRSBranding';
 import { CriticalEscalationHeatmap } from './CriticalEscalationHeatmap';
+import { AdminDatabaseRecordsSection } from './AdminDatabaseRecordsSection';
 
 interface AdminAnalyticsViewProps {
   complaints?: CivicComplaint[];
@@ -194,7 +195,7 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ complain
     ];
 
     // Count live complaints submitted today or recently if available
-    const liveCount = complaints.length;
+    const liveCount = (complaints || []).length;
     const additionalLiveToday = Math.max(0, liveCount - 6);
 
     baseDailyPattern.forEach(item => {
@@ -227,13 +228,15 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ complain
 
   // Aggregate stats across 30 days
   const stats = useMemo(() => {
-    const totalComplaints = chartData.reduce((acc, curr) => acc + curr.total, 0);
-    const avgDaily = (totalComplaints / chartData.length).toFixed(1);
+    const totalComplaints = (chartData || []).reduce((acc, curr) => acc + curr.total, 0);
+    const avgDaily = chartData && chartData.length > 0 ? (totalComplaints / chartData.length).toFixed(1) : '0.0';
     
-    let peakDay = chartData[0];
-    for (const d of chartData) {
-      if (d.total > peakDay.total) {
-        peakDay = d;
+    let peakDay = (chartData && chartData[0]) || { total: 0, fullDate: 'N/A' };
+    if (chartData) {
+      for (const d of chartData) {
+        if (d.total > peakDay.total) {
+          peakDay = d;
+        }
       }
     }
 
@@ -804,6 +807,9 @@ export const AdminAnalyticsView: React.FC<AdminAnalyticsViewProps> = ({ complain
           </div>
         </div>
       </div>
+
+      {/* Authoritative Municipal Database Repository & Data Export Section */}
+      <AdminDatabaseRecordsSection complaints={complaints} />
     </div>
   );
 };

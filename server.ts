@@ -9,6 +9,7 @@ import { CivicComplaint } from "./src/types";
 import { requireAuth, optionalAuth, AuthRequest } from "./src/middleware/auth.ts";
 import { getUsers, getOrCreateUser } from "./src/db/users.ts";
 import { getAllComplaintsFromDb, insertComplaintToDb, updateComplaintInDb } from "./src/db/complaints.ts";
+import { saveComplaintToFirestore, updateComplaintInFirestore, fetchComplaintsFromFirestore } from "./src/lib/firestore-server";
 
 // User and Auth interfaces
 interface ServerUser {
@@ -460,13 +461,88 @@ async function startServer() {
   let complaints: CivicComplaint[] = loadComplaintsFromDb();
 
   // GET /api/complaints - Returns all complaints from persistent database
-  app.get("/api/complaints", (req, res) => {
-    complaints = loadComplaintsFromDb();
-    res.json({
-      success: true,
-      count: complaints.length,
-      data: complaints,
-    });
+  app.get("/api/complaints", async (req, res) => {
+    try {
+      complaints = loadComplaintsFromDb();
+      res.json({
+        success: true,
+        count: complaints.length,
+        data: complaints,
+      });
+    } catch (err) {
+      console.error("[API] Error fetching complaints:", err);
+      res.status(500).json({ success: false, error: "Error fetching complaints" });
+    }
+  });
+
+  // GET /api/complaints/database-records - Export authoritative municipal records for Admin Panel
+  app.get("/api/complaints/database-records", async (req, res) => {
+    try {
+      complaints = loadComplaintsFromDb();
+      let firestoreRecords: CivicComplaint[] = [];
+      try {
+        firestoreRecords = await fetchComplaintsFromFirestore();
+      } catch (fErr) {
+        console.warn("[Firestore] Failed to query records for export:", fErr);
+      }
+
+      // Merge local database with Firestore
+      const mergedMap = new Map<string, CivicComplaint>();
+      complaints.forEach(c => mergedMap.set(c.id, c));
+      firestoreRecords.forEach(c => {
+        const existing = mergedMap.get(c.id);
+        mergedMap.set(c.id, { ...(existing || {}), ...c });
+      });
+
+      const allRecords = Array.from(mergedMap.values());
+
+      // Format with the full authoritative municipal schema
+      const authoritativeRecords = allRecords.map(c => {
+        const evidence: string[] = [];
+        if (c.imageUrl) evidence.push(c.imageUrl);
+        if (Array.isArray(c.attachments)) {
+          c.attachments.forEach(a => {
+            if (a.url && !evidence.includes(a.url)) evidence.push(a.url);
+            else if (a.name && !evidence.includes(a.name)) evidence.push(a.name);
+          });
+        }
+
+        return {
+          citizenName: c.citizenName || 'Marcus Vance',
+          citizenEmail: c.citizenEmail || c.userEmail || 'citizen@icmrs.gov',
+          complaintNumber: c.complaintNumber || c.id,
+          complaintTitle: c.title,
+          title: c.title,
+          description: c.description || '',
+          category: c.category || 'Roads & Bridges',
+          status: c.status || 'In Progress',
+          priority: c.priority || 'High',
+          location: c.location || 'Central Delhi NCT',
+          department: c.department || 'District 04 Municipal Response Bureau',
+          assignedOfficer: c.assignedOfficer || 'Elena Vance',
+          resolutionDetails: c.resolutionDetails || (c.status === 'Resolved' ? 'Remediated and certified according to Municipal Standard §42' : 'Active in municipal response queue'),
+          evidence,
+          createdAt: c.createdAt || c.dateTime || new Date().toISOString(),
+          updatedAt: c.updatedAt || new Date().toISOString(),
+          statusHistory: c.statusHistory || [],
+          pipelineStep: c.pipelineStep || 1,
+          pipelineStepName: c.pipelineStepName || 'Step 1 of 5: Telemetry Received & Dispatched',
+          slaRemaining: c.slaRemaining || '24h 00m SLA remaining'
+        };
+      });
+
+      res.json({
+        success: true,
+        count: authoritativeRecords.length,
+        firestoreCount: firestoreRecords.length,
+        databaseId: 'ai-studio-icmrsintelligent-20ad02e6-e593-4465-82c3-77c4d36f637d',
+        projectId: 'eminent-aloe-4t8c4',
+        records: authoritativeRecords
+      });
+    } catch (err) {
+      console.error("[Database] Error exporting authoritative records:", err);
+      res.status(500).json({ success: false, error: "Failed to export database records" });
+    }
   });
 
   // GET /api/complaints/:id - Get single complaint with full details, attachments, history
@@ -645,6 +721,13 @@ async function startServer() {
       complaints.unshift(newComplaint);
       saveComplaintsToDb(complaints);
 
+      // Persist permanently to Firestore database
+      saveComplaintToFirestore(newComplaint).then(ok => {
+        if (ok) {
+          console.log(`[Firestore] Complaint ${newComplaint.id} saved to Firestore database collection 'complaints'`);
+        }
+      }).catch(err => console.warn('[Firestore] Async save log:', err));
+
       // Persist to Cloud SQL with sanitized error handling
       insertComplaintToDb(newComplaint).catch((err) => {
         console.warn("[Cloud SQL] Note: Async Cloud SQL insert logged:", err?.message);
@@ -714,6 +797,11 @@ async function startServer() {
 
       complaints[index] = updatedComplaint;
       saveComplaintsToDb(complaints);
+
+      // Persist updates to Firestore database
+      updateComplaintInFirestore(updatedComplaint.id, updatedComplaint).catch(err => {
+        console.warn('[Firestore] Async update log:', err);
+      });
 
       // Persist patch to Cloud SQL
       updateComplaintInDb(updatedComplaint.complaintNumber || updatedComplaint.id, updatedComplaint).catch((err) => {

@@ -70,12 +70,12 @@ export const OfficerNotesModal: React.FC<OfficerNotesModalProps> = ({
 
         {/* Notes List */}
         <div className="flex-1 overflow-y-auto space-y-3 pr-1 my-2">
-          {complaint.officerNotes.length === 0 ? (
+          {(!complaint.officerNotes || complaint.officerNotes.length === 0) ? (
             <p className="text-[13px] text-gray-400 text-center py-6 font-medium">
               No notes logged yet.
             </p>
           ) : (
-            complaint.officerNotes.map(note => (
+            (complaint.officerNotes || []).map(note => (
               <div key={note.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">

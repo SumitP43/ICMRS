@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { ICMRSLogo } from './ICMRSBranding';
 import { PriorityBadge } from './PriorityBadge';
 
-export type MetricFilterType = 'all' | 'active' | 'resolved' | 'sla';
+export type MetricFilterType = 'all' | 'my-complaints' | 'active' | 'resolved' | 'sla';
 
 interface CitizenHubViewProps {
   complaints: CivicComplaint[];
@@ -57,6 +57,18 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
     [complaints]
   );
 
+  const myComplaints = useMemo(() => {
+    if (!currentUser) return complaints;
+    const userEmail = (currentUser.email || '').toLowerCase().trim();
+    const userName = (currentUser.name || '').toLowerCase().trim();
+    return complaints.filter(c => 
+      (c.citizenEmail && c.citizenEmail.toLowerCase().trim() === userEmail) ||
+      (c.userEmail && c.userEmail.toLowerCase().trim() === userEmail) ||
+      (c.userId && c.userId === currentUser.id) ||
+      (c.citizenName && c.citizenName.toLowerCase().trim() === userName)
+    );
+  }, [complaints, currentUser]);
+
   const resolutionRate = useMemo(() => {
     if (totalCount === 0) return '100.0';
     return ((resolvedComplaints.length / totalCount) * 100).toFixed(1);
@@ -71,6 +83,8 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
   // Complaints dataset displayed in the primary queue based on the active button filter
   const displayedComplaints = useMemo(() => {
     switch (activeMetricFilter) {
+      case 'my-complaints':
+        return myComplaints;
       case 'active':
         return activeComplaints;
       case 'resolved':
@@ -83,7 +97,7 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
       default:
         return complaints;
     }
-  }, [activeMetricFilter, complaints, activeComplaints, resolvedComplaints, urgentSlaComplaints]);
+  }, [activeMetricFilter, complaints, myComplaints, activeComplaints, resolvedComplaints, urgentSlaComplaints]);
 
   const handleMetricClick = (filter: MetricFilterType) => {
     setActiveMetricFilter(filter);
@@ -418,10 +432,60 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 self-start sm:self-auto">
-                <span className="bento-badge-indigo">
-                  {displayedComplaints.length} {displayedComplaints.length === 1 ? 'Incident' : 'Incidents'}
-                </span>
+              <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                {/* Filter Tabs */}
+                <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-2xl border border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setActiveMetricFilter('all')}
+                    className={`px-3 py-1 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
+                      activeMetricFilter === 'all'
+                        ? 'bg-white text-indigo-700 shadow-xs'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    All ({totalCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveMetricFilter('my-complaints')}
+                    className={`px-3 py-1 text-[11px] font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1 ${
+                      activeMetricFilter === 'my-complaints'
+                        ? 'bg-white text-indigo-700 shadow-xs'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <span>My Complaints</span>
+                    {myComplaints.length > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-extrabold">
+                        {myComplaints.length}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveMetricFilter('active')}
+                    className={`px-3 py-1 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
+                      activeMetricFilter === 'active'
+                        ? 'bg-white text-indigo-700 shadow-xs'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Active ({activeComplaints.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveMetricFilter('resolved')}
+                    className={`px-3 py-1 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
+                      activeMetricFilter === 'resolved'
+                        ? 'bg-white text-emerald-700 shadow-xs'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Resolved ({resolvedComplaints.length})
+                  </button>
+                </div>
+
                 {activeMetricFilter !== 'all' && (
                   <button
                     type="button"
@@ -429,7 +493,7 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
                     className="text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1 rounded-full transition-colors flex items-center gap-1 cursor-pointer"
                     title="Reset to all complaints"
                   >
-                    <span>Reset Filter</span>
+                    <span>Reset</span>
                     <span className="material-symbols-outlined text-[13px]">restart_alt</span>
                   </button>
                 )}
@@ -504,6 +568,17 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
                         {ticket.category}
                       </span>
                       <PriorityBadge priority={ticket.priority} size="sm" />
+                      {ticket.citizenName && (
+                        <span className="px-2.5 py-0.5 rounded-full bg-gray-50 text-gray-600 text-[10px] font-medium border border-gray-200">
+                          {ticket.citizenName}
+                        </span>
+                      )}
+                      {currentUser && ((ticket.citizenEmail && ticket.citizenEmail.toLowerCase() === currentUser.email?.toLowerCase()) || (ticket.userEmail && ticket.userEmail.toLowerCase() === currentUser.email?.toLowerCase()) || ticket.userId === currentUser.id) && (
+                        <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold border border-indigo-200 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+                          My Report
+                        </span>
+                      )}
                     </div>
 
                     {/* SLA Countdown Pill */}
@@ -629,7 +704,7 @@ export const CitizenHubView: React.FC<CitizenHubViewProps> = ({
                         className="px-3.5 py-2 rounded-xl bg-gray-100 text-[#111827] text-[11px] font-bold hover:bg-gray-200 transition-colors flex items-center gap-1.5"
                       >
                         <span className="material-symbols-outlined text-[15px] text-indigo-600">chat</span>
-                        <span>Officer Notes ({ticket.officerNotes.length})</span>
+                        <span>Officer Notes ({(ticket.officerNotes || []).length})</span>
                       </button>
                       {ticket.priority !== 'Critical' && (
                         <button 
