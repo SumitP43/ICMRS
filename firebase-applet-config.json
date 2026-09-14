@@ -1,12 +1,12 @@
 {
-  "projectId": "icmrs-10cd3",
-  "appId": "1:751234551128:web:b3a265e1233d533451a92d",
-  "apiKey": "AIzaSyDqR5MsNiXxVluW77YdxJffkk3JUZ5xTzQ",
-  "authDomain": "icmrs-10cd3.firebaseapp.com",
-  "firestoreDatabaseId": "(default)",
-  "storageBucket": "icmrs-10cd3.firebasestorage.app",
-  "messagingSenderId": "751234551128",
-  "measurementId": "G-YYV6T8VKJL",
-  "oAuthClientId": "",
+  "projectId": "eminent-aloe-4t8c4",
+  "appId": "1:930381068162:web:04e0b19e454a1dc535c19b",
+  "apiKey": "AIzaSyAEchCmTR9YvGXtV5Yp_ev8tnftM0eub1c",
+  "authDomain": "eminent-aloe-4t8c4.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-icmrsintelligent-20ad02e6-e593-4465-82c3-77c4d36f637d",
+  "storageBucket": "eminent-aloe-4t8c4.firebasestorage.app",
+  "messagingSenderId": "930381068162",
+  "measurementId": "",
+  "oAuthClientId": "930381068162-l2kh1ceq4m218bairo2aqq192a37l9pr.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }

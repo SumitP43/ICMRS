@@ -6,6 +6,9 @@ import { GoogleGenAI } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 import { INITIAL_COMPLAINTS } from "./src/data/mockData";
 import { CivicComplaint } from "./src/types";
+import { requireAuth, optionalAuth, AuthRequest } from "./src/middleware/auth.ts";
+import { getUsers, getOrCreateUser } from "./src/db/users.ts";
+import { getAllComplaintsFromDb, insertComplaintToDb, updateComplaintInDb } from "./src/db/complaints.ts";
 
 // User and Auth interfaces
 interface ServerUser {
@@ -642,6 +645,11 @@ async function startServer() {
       complaints.unshift(newComplaint);
       saveComplaintsToDb(complaints);
 
+      // Persist to Cloud SQL with sanitized error handling
+      insertComplaintToDb(newComplaint).catch((err) => {
+        console.warn("[Cloud SQL] Note: Async Cloud SQL insert logged:", err?.message);
+      });
+
       console.log(`[Database] Permanently stored complaint ${newComplaint.id} by citizen ${citizenName} (${citizenEmail})`);
       return res.status(201).json({
         success: true,
@@ -707,6 +715,11 @@ async function startServer() {
       complaints[index] = updatedComplaint;
       saveComplaintsToDb(complaints);
 
+      // Persist patch to Cloud SQL
+      updateComplaintInDb(updatedComplaint.complaintNumber || updatedComplaint.id, updatedComplaint).catch((err) => {
+        console.warn("[Cloud SQL] Note: Async Cloud SQL update logged:", err?.message);
+      });
+
       return res.json({
         success: true,
         message: "Complaint updated successfully in database.",
@@ -715,6 +728,28 @@ async function startServer() {
     } catch (err) {
       console.error("[Database] Error updating complaint:", err);
       return res.status(500).json({ success: false, error: "Internal server error while updating complaint" });
+    }
+  });
+
+  // GET /api/users - Fetch registered users from Cloud SQL (with optional/bearer auth)
+  app.get("/api/users", optionalAuth, async (req: AuthRequest, res) => {
+    try {
+      const dbUsers = await getUsers();
+      res.json({ success: true, count: dbUsers.length, data: dbUsers });
+    } catch (error: any) {
+      console.error("Failed to fetch users from Cloud SQL:", error);
+      res.status(500).json({ success: false, error: error.message || "Failed to fetch users" });
+    }
+  });
+
+  // GET /api/sql/complaints - Direct Cloud SQL query for complaints
+  app.get("/api/sql/complaints", async (req, res) => {
+    try {
+      const sqlComplaints = await getAllComplaintsFromDb();
+      res.json({ success: true, count: sqlComplaints.length, data: sqlComplaints });
+    } catch (error: any) {
+      console.error("Failed to fetch complaints from Cloud SQL:", error);
+      res.status(500).json({ success: false, error: error.message || "Failed to fetch complaints from Cloud SQL" });
     }
   });
 
