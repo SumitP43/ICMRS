@@ -2,6 +2,11 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
+import dotenv from "dotenv";
+
+dotenv.config({ path: ".env.local" });
+dotenv.config();
+
 import { GoogleGenAI } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 import { INITIAL_COMPLAINTS } from "./src/data/mockData";

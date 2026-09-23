@@ -20,9 +20,10 @@ env/
 .coverage
 htmlcov/
 
-# Databases
+# Databases & local data
 *.db
 *.sqlite
 *.sqlite3
+data/
 
 
