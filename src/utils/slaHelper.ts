@@ -24,7 +24,24 @@ export interface SlaMetrics {
  * Calculates deterministic SLA metrics, elapsed time, and time remaining
  * percentage relative to the total guaranteed SLA duration for a complaint.
  */
-export function calculateSlaMetrics(complaint: CivicComplaint): SlaMetrics {
+export function calculateSlaMetrics(complaint?: CivicComplaint | null): SlaMetrics {
+  if (!complaint) {
+    return {
+      totalHours: 48,
+      remainingHours: 24,
+      elapsedHours: 24,
+      percentLeft: 50,
+      percentElapsed: 50,
+      isResolved: false,
+      statusLabel: 'Nominal (>50% Left)',
+      badgeStyle: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      barColor: 'bg-indigo-600',
+      remainingFormatted: '24h 00m',
+      elapsedFormatted: '24h 00m',
+      totalFormatted: '48h 00m',
+    };
+  }
+
   const isResolved = complaint.status === 'Resolved' || complaint.slaStatus === 'resolved';
 
   // Base guaranteed SLA window by priority
@@ -35,7 +52,8 @@ export function calculateSlaMetrics(complaint: CivicComplaint): SlaMetrics {
     Low: 96,
   };
 
-  let totalHours = complaint.totalSlaHours || defaultTotalByPriority[complaint.priority] || 48;
+  const priorityKey = complaint.priority || 'Medium';
+  let totalHours = complaint.totalSlaHours || defaultTotalByPriority[priorityKey] || 48;
 
   // If resolved, SLA is fully completed and target was met
   if (isResolved) {
@@ -55,9 +73,10 @@ export function calculateSlaMetrics(complaint: CivicComplaint): SlaMetrics {
     };
   }
 
-  // Parse remaining hours and minutes from slaRemaining (e.g. "18h 42m SLA remaining", "4h 00m SLA remaining", "34h 10m SLA nominal")
-  const hMatch = complaint.slaRemaining.match(/(\d+)\s*h/i);
-  const mMatch = complaint.slaRemaining.match(/(\d+)\s*m/i);
+  // Parse remaining hours and minutes from slaRemaining safely (e.g. "18h 42m SLA remaining", "4h 00m SLA remaining", "34h 10m SLA nominal")
+  const slaText = typeof complaint.slaRemaining === 'string' ? complaint.slaRemaining : '';
+  const hMatch = slaText.match(/(\d+)\s*h/i);
+  const mMatch = slaText.match(/(\d+)\s*m/i);
 
   let remainingHours = 0;
   if (hMatch) remainingHours += parseInt(hMatch[1], 10);

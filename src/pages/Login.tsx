@@ -18,7 +18,8 @@ import {
   UserPlus,
   MapPin,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  KeyRound
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { CivicRole } from '../types';
@@ -29,7 +30,7 @@ interface LoginProps {
 }
 
 export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
-  const { login, register, signInWithGoogle, loading: authLoading } = useAuth();
+  const { login, register, signInWithGoogle, resetPassword, loading: authLoading } = useAuth();
 
   // Mode: 'login' | 'register'
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -39,6 +40,12 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+
+  // Forgot password state
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSubmitting, setResetSubmitting] = useState(false);
+  const [resetMessage, setResetMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Registration form state
   const [regName, setRegName] = useState('');
@@ -54,6 +61,29 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail.trim() || !resetEmail.includes('@')) {
+      setResetMessage({ type: 'error', text: 'Please enter a valid email address.' });
+      return;
+    }
+
+    setResetSubmitting(true);
+    setResetMessage(null);
+    try {
+      const result = await resetPassword(resetEmail.trim());
+      setResetMessage({
+        type: result.success ? 'success' : 'error',
+        text: result.message,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to send password reset email.';
+      setResetMessage({ type: 'error', text: msg });
+    } finally {
+      setResetSubmitting(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setErrorMessage(null);
@@ -286,8 +316,16 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 </p>
               </div>
 
-              {/* Google Sign-in */}
+              {/* Method 1: Google Authentication */}
               <div className="mb-5">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    Sign-In Option 1: Google Account
+                  </span>
+                  <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    One-Tap Access
+                  </span>
+                </div>
                 <button
                   type="button"
                   id="google-signin-btn"
@@ -298,7 +336,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                   {googleLoading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                      <span>Authenticating with Firebase...</span>
+                      <span>Authenticating with Google (Firebase)...</span>
                     </>
                   ) : (
                     <>
@@ -326,17 +364,71 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 </button>
                 <div className="flex items-center justify-center gap-1.5 text-[10px] text-gray-500 mt-1.5 font-medium">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Powered by Firebase Auth & Cloud Firestore</span>
+                  <span>Authenticated via Google &amp; Firebase</span>
                 </div>
               </div>
 
-              <div className="relative flex py-1 items-center mb-5">
+              {/* Method 2: Email and Password */}
+              <div className="relative flex py-1 items-center mb-4">
                 <div className="flex-grow border-t border-gray-200"></div>
-                <span className="flex-shrink mx-3 text-gray-400 text-[10px] font-semibold uppercase tracking-wider">
-                  Or test role preset
+                <span className="flex-shrink mx-3 text-gray-500 text-[10px] font-bold uppercase tracking-wider">
+                  Option 2: Email &amp; Password
                 </span>
                 <div className="flex-grow border-t border-gray-200"></div>
               </div>
+
+              {/* Forgot Password Accordion / Card */}
+              {showForgotPassword && (
+                <div className="bg-indigo-50/80 border border-indigo-200 rounded-2xl p-4 mb-4 animate-in fade-in">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-900 flex items-center gap-1.5">
+                      <KeyRound className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Reset Password</span>
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForgotPassword(false);
+                        setResetMessage(null);
+                      }}
+                      className="text-[11px] font-semibold text-gray-500 hover:text-gray-800 cursor-pointer"
+                    >
+                      Close
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2.5">
+                    Enter your email address to receive a secure Firebase password reset link.
+                  </p>
+
+                  {resetMessage && (
+                    <div className={`p-2.5 rounded-xl text-xs mb-2.5 flex items-center gap-2 ${
+                      resetMessage.type === 'success'
+                        ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                        : 'bg-rose-100 text-rose-900 border border-rose-300'
+                    }`}>
+                      <span>{resetMessage.text}</span>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleForgotPasswordSubmit} className="space-y-2">
+                    <input
+                      type="email"
+                      required
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      placeholder="Enter registered email address"
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    />
+                    <button
+                      type="submit"
+                      disabled={resetSubmitting}
+                      className="w-full py-2 px-3 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition-colors cursor-pointer disabled:opacity-60"
+                    >
+                      {resetSubmitting ? 'Sending Reset Link...' : 'Send Password Reset Link'}
+                    </button>
+                  </form>
+                </div>
+              )}
 
               {/* Quick Role Fill Presets */}
               <div className="mb-5 bg-gray-50 rounded-2xl p-2.5 border border-gray-200/70">
@@ -423,9 +515,18 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                     >
                       Password
                     </label>
-                    <span className="text-[11px] text-gray-400">
-                      Min. 6 characters
-                    </span>
+                    <button
+                      type="button"
+                      id="forgot-password-link-btn"
+                      onClick={() => {
+                        setResetEmail(email.trim());
+                        setShowForgotPassword(true);
+                        setResetMessage(null);
+                      }}
+                      className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer"
+                    >
+                      Forgot password?
+                    </button>
                   </div>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">

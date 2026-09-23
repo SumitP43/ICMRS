@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { RefreshCw, Bell, AlertCircle, Volume2, X } from 'lucide-react';
+import { RefreshCw, Bell, AlertCircle, Volume2, X, Copy, Check, Printer } from 'lucide-react';
 import { 
   CivicRole, 
   NavTab, 
@@ -41,6 +41,7 @@ import { QuickReportModal } from './components/QuickReportModal';
 import { OfficerNotesModal } from './components/OfficerNotesModal';
 import { UploadPhotoModal } from './components/UploadPhotoModal';
 import { CivicChatModal } from './components/CivicChatModal';
+import { PrintableComplaintSummary } from './components/PrintableComplaintSummary';
 import { ICMRSLogo } from './components/ICMRSBranding';
 
 function getRoleDefaultTab(role: CivicRole): NavTab {
@@ -107,18 +108,86 @@ function ICMRSApplication() {
     timestamp: number;
   }
   const [incidentToast, setIncidentToast] = useState<AdminIncidentToast | null>(null);
+  const [isToastIdCopied, setIsToastIdCopied] = useState(false);
+  const [complaintToPrint, setComplaintToPrint] = useState<CivicComplaint | null>(null);
   const initialSnapshotLoadedRef = useRef(false);
   const knownComplaintIdsRef = useRef<Set<string>>(new Set(INITIAL_COMPLAINTS.map(c => c.id)));
   const knownComplaintPrioritiesRef = useRef<Map<string, string>>(new Map(INITIAL_COMPLAINTS.map(c => [c.id, c.priority])));
 
   // Auto-dismiss incident toast after 5 seconds
   useEffect(() => {
-    if (!incidentToast) return;
+    if (!incidentToast) {
+      setIsToastIdCopied(false);
+      return;
+    }
     const timer = setTimeout(() => {
       setIncidentToast(null);
+      setIsToastIdCopied(false);
     }, 5000);
     return () => clearTimeout(timer);
   }, [incidentToast]);
+
+  const handleCopyToastComplaintId = async (id: string) => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(id);
+      } else {
+        throw new Error('Clipboard API unavailable');
+      }
+      setIsToastIdCopied(true);
+      setTimeout(() => setIsToastIdCopied(false), 2000);
+    } catch {
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = id;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        setIsToastIdCopied(true);
+        setTimeout(() => setIsToastIdCopied(false), 2000);
+      } catch (err) {
+        console.warn('Failed to copy ID:', err);
+      }
+    }
+  };
+
+  const handlePrintComplaintSummary = (complaintId: string) => {
+    const target = complaints.find(c => c.id === complaintId) || {
+      id: complaintId,
+      title: incidentToast?.complaintTitle || 'Civic Incident Complaint',
+      description: 'Complaint details retrieved from incident notification.',
+      category: 'Civic Infrastructure',
+      location: 'Municipal Jurisdiction',
+      status: 'Pending Triage',
+      priority: (incidentToast?.priority as any) || (incidentToast?.type === 'escalation' ? 'Critical' : 'High'),
+      pipelineStep: 1,
+      pipelineStepName: 'Initial Dispatch',
+      pipelinePercent: 20,
+      assignedCrew: 'Standby Emergency Works',
+      timeLogged: 'Just now',
+      slaRemaining: incidentToast?.type === 'escalation' ? '4h 00m remaining' : '24h 00m remaining',
+      slaStatus: incidentToast?.type === 'escalation' ? 'urgent' : 'warning',
+      gpsTagged: true,
+      coordinates: { lat: 28.6139, lng: 77.2090 },
+      citizenToken: `TOK-${Date.now().toString(36).toUpperCase()}`,
+      officerNotes: []
+    } as CivicComplaint;
+
+    setComplaintToPrint(target);
+
+    // Give React a tick to mount the printable container, then invoke native window.print()
+    setTimeout(() => {
+      try {
+        window.print();
+      } catch (err) {
+        console.warn('window.print() invocation error:', err);
+      }
+    }, 150);
+  };
 
   // Modal states
   const [isQuickReportOpen, setIsQuickReportOpen] = useState(false);
@@ -284,11 +353,11 @@ function ICMRSApplication() {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (
-      c.id.toLowerCase().includes(q) ||
-      c.title.toLowerCase().includes(q) ||
-      c.location.toLowerCase().includes(q) ||
-      c.category.toLowerCase().includes(q) ||
-      c.description.toLowerCase().includes(q)
+      (c.id || '').toLowerCase().includes(q) ||
+      (c.title || '').toLowerCase().includes(q) ||
+      (c.location || '').toLowerCase().includes(q) ||
+      (c.category || '').toLowerCase().includes(q) ||
+      (c.description || '').toLowerCase().includes(q)
     );
   });
 
@@ -528,8 +597,9 @@ function ICMRSApplication() {
   const effectiveRole = userRole || 'citizen';
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#191c1e] flex flex-col font-['Inter',sans-serif]">
-      {/* Primary Top Navigation Bar */}
+    <>
+      <div className="min-h-screen bg-[#f8fafc] text-[#191c1e] flex flex-col font-['Inter',sans-serif] no-print">
+        {/* Primary Top Navigation Bar */}
       <Navbar
         currentRole={effectiveRole}
         setCurrentRole={(role) => {
@@ -868,8 +938,47 @@ function ICMRSApplication() {
 
           {/* Incident Details Card Content */}
           <div className="pt-2.5 space-y-1.5">
-            <div className="font-mono text-[12px] font-extrabold text-[#111827] tracking-wide">
-              {incidentToast.complaintId}
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-mono text-[12px] font-extrabold text-[#111827] tracking-wide">
+                {incidentToast.complaintId}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  id="print-toast-complaint-btn"
+                  onClick={() => handlePrintComplaintSummary(incidentToast.complaintId)}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer border bg-gray-50 text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 border-gray-200"
+                  title="Print Complaint Summary"
+                  aria-label="Print Complaint Summary"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print</span>
+                </button>
+                <button
+                  type="button"
+                  id="copy-toast-complaint-id-btn"
+                  onClick={() => handleCopyToastComplaintId(incidentToast.complaintId)}
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer border ${
+                    isToastIdCopied
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                      : 'bg-gray-50 text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 border-gray-200'
+                  }`}
+                  title="Copy Complaint ID"
+                  aria-label="Copy Complaint ID"
+                >
+                  {isToastIdCopied ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy ID</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             <p className="text-[13px] text-gray-800 font-semibold leading-snug line-clamp-2">
@@ -914,7 +1023,11 @@ function ICMRSApplication() {
           </div>
         </aside>
       )}
-    </div>
+      </div>
+
+      {/* Printer-friendly simplified summary view */}
+      <PrintableComplaintSummary complaint={complaintToPrint} />
+    </>
   );
 }
 

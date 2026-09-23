@@ -28,9 +28,10 @@ export async function getOrCreateUser(uid: string, email: string, name?: string)
 
 export async function getUsers() {
   try {
-    return await db.select().from(users);
+    const results = await db.select().from(users);
+    return Array.isArray(results) ? results : [];
   } catch (error) {
-    console.error("Database query failed for users:", error);
-    throw new Error("Database query failed. Please try again later.", { cause: error });
+    console.warn("Cloud SQL not connected or query failed for users — returning empty list:", (error as any)?.message);
+    return [];
   }
 }

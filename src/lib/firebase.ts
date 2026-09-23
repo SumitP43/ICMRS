@@ -8,6 +8,10 @@ import {
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  sendPasswordResetEmail,
   signOut as fbSignOut, 
   onAuthStateChanged,
   type User as FirebaseUser 
@@ -139,6 +143,10 @@ testConnection();
 
 export {
   signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  sendPasswordResetEmail,
   fbSignOut,
   onAuthStateChanged,
   doc,

@@ -6,3 +6,23 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.venv/
+venv/
+ENV/
+env/
+.coverage
+htmlcov/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+

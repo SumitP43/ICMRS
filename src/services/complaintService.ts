@@ -26,14 +26,27 @@ const subscribers = new Set<(complaints: CivicComplaint[]) => void>();
 
 export function sanitizeComplaint(raw: any): CivicComplaint {
   if (!raw) return raw;
+  const priority = raw.priority || 'Medium';
+  const defaultSlaRemaining = priority === 'Critical' ? '4h 00m SLA urgent' : '24h 00m SLA nominal';
   return {
     ...raw,
     id: raw.id || raw.complaintNumber || `#ICMRS-${Date.now()}`,
+    complaintNumber: raw.complaintNumber || raw.id || `#ICMRS-${Date.now()}`,
     title: raw.title || 'Civic Incident',
     category: raw.category || 'Roads & Bridges',
     status: raw.status || 'In Progress',
-    priority: raw.priority || 'Medium',
+    priority: priority,
     location: raw.location || 'Delhi NCT',
+    slaRemaining: raw.slaRemaining || defaultSlaRemaining,
+    slaStatus: raw.slaStatus || (priority === 'Critical' ? 'urgent' : 'nominal'),
+    totalSlaHours: raw.totalSlaHours || (priority === 'Critical' ? 24 : 48),
+    pipelineStep: raw.pipelineStep || 1,
+    pipelineStepName: raw.pipelineStepName || 'Step 1 of 5: Telemetry Received & Dispatched',
+    pipelinePercent: raw.pipelinePercent || 20,
+    coordinates: raw.coordinates || { lat: 28.6139, lng: 77.2090 },
+    citizenToken: raw.citizenToken || 'Verified Resident',
+    timeLogged: raw.timeLogged || 'Just now',
+    assignedCrew: raw.assignedCrew || 'Municipal Quick Response Team',
     officerNotes: Array.isArray(raw.officerNotes) ? raw.officerNotes : [],
     statusHistory: Array.isArray(raw.statusHistory) ? raw.statusHistory : [],
     attachments: Array.isArray(raw.attachments) ? raw.attachments : [],

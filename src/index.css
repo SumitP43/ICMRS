@@ -218,3 +218,25 @@
   vertical-align: middle;
 }
 
+/* Printer-friendly complaint summary styles */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only-summary {
+    display: block !important;
+  }
+}
+
+@media screen {
+  .print-only-summary {
+    display: none !important;
+  }
+}
+

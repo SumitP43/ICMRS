@@ -62,13 +62,16 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const filteredSearchResults = searchQuery.trim() === '' 
     ? [] 
-    : complaints.filter(c => 
-        c.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.citizenToken.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+    : complaints.filter(c => {
+        const q = searchQuery.toLowerCase();
+        return (
+          (c.id || '').toLowerCase().includes(q) ||
+          (c.title || '').toLowerCase().includes(q) ||
+          (c.location || '').toLowerCase().includes(q) ||
+          (c.category || '').toLowerCase().includes(q) ||
+          (c.citizenToken || '').toLowerCase().includes(q)
+        );
+      });
 
   const allNavItems: { id: NavigationTab; label: string; roles: CivicRole[] }[] = [
     { id: 'citizen-hub', label: 'Citizen Hub', roles: ['citizen'] },

@@ -10,6 +10,10 @@ import {
   db, 
   googleProvider, 
   signInWithPopup, 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  sendPasswordResetEmail,
   fbSignOut, 
   onAuthStateChanged,
   doc, 
@@ -28,6 +32,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<AuthUser>;
   login: (credentials: LoginCredentials, rememberMe?: boolean) => Promise<AuthResponse>;
   register: (credentials: RegisterCredentials, rememberMe?: boolean) => Promise<AuthResponse>;
+  resetPassword: (email: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   isAdmin: boolean;
   isOfficer: boolean;
@@ -158,12 +163,81 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
-   * Municipal credential login (supporting custom demo accounts and API)
+   * Municipal and Firebase credential login (supporting Google, Firebase Email/Password, demo accounts, and backend API)
    */
   const login = async (credentials: LoginCredentials, rememberMe: boolean = false): Promise<AuthResponse> => {
     setError(null);
     const emailLower = credentials.email.toLowerCase().trim();
 
+    // 1. Rapid testing municipal preset accounts
+    const isPresetAdmin = emailLower === 'admin@icmrs.gov' && credentials.password === 'Admin123!';
+    const isPresetOfficer = emailLower === 'officer@icmrs.gov' && credentials.password === 'Officer123!';
+    const isPresetCitizen = emailLower === 'citizen@icmrs.gov' && credentials.password === 'Citizen123!';
+
+    if (isPresetAdmin || isPresetOfficer || isPresetCitizen) {
+      let matchedUser: AuthUser;
+      if (isPresetAdmin) {
+        matchedUser = {
+          id: 'usr-admin-01',
+          name: 'Dir. A. Vance-Miller',
+          email: 'admin@icmrs.gov',
+          role: 'admin',
+          badgeNumber: 'ADM-DIR-001',
+          department: 'Executive Oversight & Analytics',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+        };
+      } else if (isPresetOfficer) {
+        matchedUser = {
+          id: 'usr-officer-01',
+          name: 'Insp. Elena Vance',
+          email: 'officer@icmrs.gov',
+          role: 'officer',
+          badgeNumber: 'OFFICER-042',
+          department: 'Rapid Triage & Incident Dispatch',
+          avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAo1spD6uHFwwgatDTJluJOHotpybzw1nBkawW4CpVC6tlgHanXHxZvE0b9hld20gHblmdWB1BKG26TxYFl08U0B-ZXXEI1jdhNWju4uXF9hCFgd5N9KkNaLrVmbsK6jSUlD-791HHLMzt7oy1RI-Z_Jg1iOQ8Hblq4NHF2N2s9dbKjfkqQu2gyn0Km1a1bvL1fpxUYzB9D3cLbyVdzxcmXvTJctldXOlrLGGDuADl4FDBluoZE6eIUaQ',
+        };
+      } else {
+        matchedUser = {
+          id: 'usr-citizen-demo',
+          name: 'Marcus Vance',
+          email: 'citizen@icmrs.gov',
+          role: 'citizen',
+          badgeNumber: 'Verified Resident',
+          department: 'Delhi NCT Resident',
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+        };
+      }
+
+      setCurrentUser(matchedUser);
+      if (rememberMe) {
+        localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(matchedUser));
+      }
+      return { success: true, user: matchedUser };
+    }
+
+    // 2. Attempt direct Firebase Email & Password authentication
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, credentials.email.trim(), credentials.password);
+      if (userCredential.user) {
+        setFirebaseUser(userCredential.user);
+        const authUser = await buildAuthUserFromFirebase(userCredential.user);
+        setCurrentUser(authUser);
+        if (rememberMe) {
+          localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(authUser));
+        }
+        return { success: true, user: authUser };
+      }
+    } catch (fbAuthErr: unknown) {
+      const fbErr = fbAuthErr as { code?: string; message?: string };
+      console.warn('[AuthContext] Firebase email/password sign-in notice:', fbErr?.code || fbErr);
+
+      // If user not found in Firebase, check backend server database
+      if (fbErr?.code === 'auth/wrong-password' || fbErr?.code === 'auth/invalid-credential') {
+        // Continue to check backend in case registered on local backend
+      }
+    }
+
+    // 3. Backend API authentication check
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -185,59 +259,87 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           return { success: true, user: authUser };
         }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        if (errData.error) {
+          return { success: false, error: errData.error };
+        }
       }
     } catch (apiErr) {
       console.warn('[AuthContext] Backend API login notice:', apiErr);
     }
 
-    // Role preset fallback for rapid municipal demonstration
-    let matchedUser: AuthUser | null = null;
-    if (emailLower === 'admin@icmrs.gov' || emailLower === ADMIN_EMAIL.toLowerCase()) {
-      matchedUser = {
-        id: 'usr-admin-01',
-        name: 'Dir. A. Vance-Miller',
-        email: credentials.email,
-        role: 'admin',
-        badgeNumber: 'ADM-DIR-001',
-        department: 'Executive Oversight & Analytics',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
-      };
-    } else if (emailLower === 'officer@icmrs.gov') {
-      matchedUser = {
-        id: 'usr-officer-01',
-        name: 'Insp. Elena Vance',
-        email: 'officer@icmrs.gov',
-        role: 'officer',
-        badgeNumber: 'OFFICER-042',
-        department: 'Rapid Triage & Incident Dispatch',
-        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAo1spD6uHFwwgatDTJluJOHotpybzw1nBkawW4CpVC6tlgHanXHxZvE0b9hld20gHblmdWB1BKG26TxYFl08U0B-ZXXEI1jdhNWju4uXF9hCFgd5N9KkNaLrVmbsK6jSUlD-791HHLMzt7oy1RI-Z_Jg1iOQ8Hblq4NHF2N2s9dbKjfkqQu2gyn0Km1a1bvL1fpxUYzB9D3cLbyVdzxcmXvTJctldXOlrLGGDuADl4FDBluoZE6eIUaQ',
-      };
-    } else {
-      matchedUser = {
-        id: `usr-citizen-${Date.now().toString(36)}`,
-        name: 'Marcus Vance',
-        email: credentials.email,
-        role: 'citizen',
-        badgeNumber: 'Verified Resident',
-        department: 'Delhi NCT Resident',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-      };
-    }
-
-    setCurrentUser(matchedUser);
-    if (rememberMe) {
-      localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(matchedUser));
-    }
-    return { success: true, user: matchedUser };
+    // Default error message for invalid credentials
+    return { 
+      success: false, 
+      error: 'Invalid email or password. Please verify your credentials or sign in with Google.' 
+    };
   };
 
   /**
-   * Register a new Citizen account
+   * Register a new Citizen account (Firebase Auth + Firestore + Backend)
    */
   const register = async (credentials: RegisterCredentials, rememberMe: boolean = true): Promise<AuthResponse> => {
     setError(null);
     setLoading(true);
 
+    let fbUser: FirebaseUser | null = null;
+
+    // 1. Try Firebase Authentication user creation
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth, 
+        credentials.email.trim(), 
+        credentials.password
+      );
+      fbUser = userCredential.user;
+
+      if (fbUser) {
+        try {
+          await updateProfile(fbUser, { displayName: credentials.name.trim() });
+        } catch (pErr) {
+          console.warn('[AuthContext] updateProfile notice:', pErr);
+        }
+
+        // Save user profile record in Firestore `users/{uid}`
+        try {
+          const userRef = doc(db, 'users', fbUser.uid);
+          const now = new Date().toISOString();
+          await setDoc(userRef, {
+            id: fbUser.uid,
+            email: credentials.email.trim().toLowerCase(),
+            name: credentials.name.trim(),
+            role: 'citizen',
+            badgeNumber: 'Verified Resident',
+            department: credentials.wardOrSector || 'Delhi NCT Resident',
+            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+            createdAt: now,
+            updatedAt: now,
+          });
+        } catch (fsErr) {
+          console.warn('[AuthContext] Firestore profile creation notice:', fsErr);
+        }
+      }
+    } catch (fbErr: unknown) {
+      const err = fbErr as { code?: string; message?: string };
+      if (err?.code === 'auth/email-already-in-use') {
+        setLoading(false);
+        return {
+          success: false,
+          error: 'An account with this email address already exists. Please sign in instead.'
+        };
+      }
+      if (err?.code === 'auth/weak-password') {
+        setLoading(false);
+        return {
+          success: false,
+          error: 'Password should be at least 6 characters long.'
+        };
+      }
+      console.warn('[AuthContext] Firebase user creation notice, falling back to server:', err?.code || err);
+    }
+
+    // 2. Also register on backend /api/auth/register for full stack session synchronization
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -247,7 +349,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const data = await res.json();
       if (res.ok && data.success && data.user) {
-        const newUser: AuthUser = data.user;
+        const newUser: AuthUser = fbUser ? await buildAuthUserFromFirebase(fbUser) : data.user;
         setCurrentUser(newUser);
         if (rememberMe) {
           localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(newUser));
@@ -257,18 +359,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: true, user: newUser, token: data.token };
       }
     } catch (err) {
-      console.warn('[AuthContext] Registration API notice, using local account creation:', err);
+      console.warn('[AuthContext] Registration API notice, using authenticated profile:', err);
     }
 
-    const fallbackUser: AuthUser = {
-      id: `usr-citizen-${Date.now()}`,
-      name: credentials.name.trim(),
-      email: credentials.email.trim().toLowerCase(),
-      role: 'citizen',
-      badgeNumber: 'Verified Resident',
-      department: credentials.wardOrSector || 'Delhi NCT Resident',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-    };
+    // Fallback user construction
+    const fallbackUser: AuthUser = fbUser 
+      ? await buildAuthUserFromFirebase(fbUser)
+      : {
+          id: `usr-citizen-${Date.now()}`,
+          name: credentials.name.trim(),
+          email: credentials.email.trim().toLowerCase(),
+          role: 'citizen',
+          badgeNumber: 'Verified Resident',
+          department: credentials.wardOrSector || 'Delhi NCT Resident',
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+        };
 
     setCurrentUser(fallbackUser);
     if (rememberMe) {
@@ -276,6 +381,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setLoading(false);
     return { success: true, user: fallbackUser };
+  };
+
+  /**
+   * Password reset using Firebase Auth
+   */
+  const resetPassword = async (emailToReset: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      await sendPasswordResetEmail(auth, emailToReset.trim());
+      return { 
+        success: true, 
+        message: 'Password reset instructions have been sent to your email address.' 
+      };
+    } catch (err: unknown) {
+      const error = err as { code?: string; message?: string };
+      let msg = 'Failed to send password reset email. Please try again.';
+      if (error?.code === 'auth/user-not-found') {
+        msg = 'No registered user found with this email address.';
+      } else if (error?.code === 'auth/invalid-email') {
+        msg = 'Please enter a valid email address.';
+      } else if (error?.message) {
+        msg = error.message;
+      }
+      return { success: false, message: msg };
+    }
   };
 
   /**
@@ -323,6 +452,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signInWithGoogle,
         login,
         register,
+        resetPassword,
         logout,
         isAdmin,
         isOfficer,
