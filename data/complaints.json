@@ -1,0 +1,532 @@
+[
+  {
+    "id": "#ICMRS-2026-001245",
+    "title": "Sub-Surface Asphalt Pothole on CP Outer Circle & Barakhamba Rd",
+    "description": "Severe asphalt crater forming near Metro Gate 3 & Barakhamba Road junction. Heavy traffic swerving into opposing lanes during evening peak rush, posing hazard to two-wheelers.",
+    "category": "Roads & Bridges",
+    "location": "Outer Circle, Connaught Place, Block C (New Delhi 110001)",
+    "coordinates": {
+      "lat": 28.6315,
+      "lng": 77.2167
+    },
+    "status": "In Progress",
+    "pipelineStep": 3,
+    "pipelineStepName": "Step 3 of 5: Asphalt Crew Deployed",
+    "pipelinePercent": 60,
+    "assignedCrew": "NDMC Rapid Road Patch Unit (Central Zone)",
+    "timeLogged": "Logged 4 hrs ago",
+    "slaRemaining": "18h 42m SLA remaining",
+    "totalSlaHours": 24,
+    "slaStatus": "urgent",
+    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuCKUAmlJjfN4RPAZeqjdSap1DcOB1SYBxe9IkhPw69OcoRfzN6QW9RK5jlq0V3osMWttxlXtj53GJfTbQbMI2vEXOSab5pM0XkL7HHqx-jkf0jcmFZmz1f5yERzYI6vkssUgfhDTo1-7KYKHVDNp4gR9lv-EHqArNSk7ZuN_YooteMhIj4twCqPXhqRGdkoNpbuQfy7hBtDugONdYHXl9vkcEryHWAtX6PzW_paboSR2AIZcrcsGVrk7A",
+    "imageAlt": "Close-up documentary civic photo of a hazardous deep asphalt pothole on an urban road lane with orange hazard spray paint markers in clear morning daylight.",
+    "gpsTagged": true,
+    "officerNotes": [
+      {
+        "id": "n-1",
+        "author": "Elena Vance",
+        "role": "Chief Field Auditor (Central Delhi)",
+        "time": "3 hours ago",
+        "text": "Initial inspection confirmed severe asphalt shear near Barakhamba crossing. Depth approx 12 cm. Asphalt mixer dispatched from Mandi House depot."
+      },
+      {
+        "id": "n-2",
+        "author": "Crew Lead Verma",
+        "role": "NDMC Patch Crew 09",
+        "time": "45 mins ago",
+        "text": "Safety cones placed on northbound lane. Hot mix delivery en route (ETA 15 mins)."
+      }
+    ],
+    "priority": "Critical",
+    "citizenToken": "Verified Resident",
+    "complaintNumber": "#ICMRS-2026-001245",
+    "latitude": 28.6315,
+    "longitude": 77.2167,
+    "citizenName": "Marcus Vance",
+    "citizenEmail": "citizen@icmrs.gov",
+    "department": "NDMC Roads & Infrastructure Directorate",
+    "assignedOfficer": "Elena Vance",
+    "resolutionDetails": "",
+    "dateTime": "Logged 4 hrs ago",
+    "attachments": [
+      {
+        "id": "att-ICMRS2026001245-1",
+        "name": "Photographic Evidence",
+        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuCKUAmlJjfN4RPAZeqjdSap1DcOB1SYBxe9IkhPw69OcoRfzN6QW9RK5jlq0V3osMWttxlXtj53GJfTbQbMI2vEXOSab5pM0XkL7HHqx-jkf0jcmFZmz1f5yERzYI6vkssUgfhDTo1-7KYKHVDNp4gR9lv-EHqArNSk7ZuN_YooteMhIj4twCqPXhqRGdkoNpbuQfy7hBtDugONdYHXl9vkcEryHWAtX6PzW_paboSR2AIZcrcsGVrk7A",
+        "type": "image/jpeg",
+        "uploadedAt": "2026-09-27T10:19:10.657Z"
+      }
+    ],
+    "statusHistory": [
+      {
+        "status": "In Progress",
+        "timestamp": "2026-09-27T10:19:10.657Z",
+        "updatedBy": "Marcus Vance",
+        "role": "citizen",
+        "notes": "Complaint initially filed and dispatched to NDMC Roads & Infrastructure Directorate"
+      }
+    ],
+    "createdAt": "2026-09-27T10:19:10.657Z",
+    "updatedAt": "2026-09-27T10:19:10.657Z",
+    "userEmail": "citizen@icmrs.gov"
+  },
+  {
+    "id": "#ICMRS-2026-001198",
+    "title": "Heritage Streetlight Luminaire Damage & Exposed Wiring",
+    "description": "Decorative heritage lamppost fixture dangling in high winds near Town Hall walkway. Exposed electrical wiring near dense pedestrian bazaar and primary school walkway.",
+    "category": "Electrical & Lighting",
+    "location": "Chandni Chowk Main Marg, near Town Hall (Old Delhi 110006)",
+    "nodeCode": "Node #NDMC-CC-402",
+    "coordinates": {
+      "lat": 28.6562,
+      "lng": 77.241
+    },
+    "status": "Assigned & Scheduled",
+    "pipelineStep": 2,
+    "pipelineStepName": "Step 2 of 5: Work Order Issued",
+    "pipelinePercent": 40,
+    "assignedCrew": "BSES Yamuna / North MCD Grid Team",
+    "timeLogged": "Logged Yesterday",
+    "slaRemaining": "34h 10m SLA nominal",
+    "totalSlaHours": 48,
+    "slaStatus": "nominal",
+    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDGor6GIQRztnq1Fn78tsRToKFXcyUfB2pCehvBgbC2kfy02JB_bh2NghGkyRghoQj5IEktqAY81JDt6YBAmwkTlubTXGizz8H6Vi8rON_8DP5hd8B9P9ujYDsLNW5b_4wB6tmI6waZ5YIOkK1cmaNEjE4688acIWA1vStVXJ4OqshCrvbLsM3xRfbzUpsGGnJe94b7W2Xif13ILNOi08le2cwUqTgoVhbTj4M37AvPjCd6eyynr66LLg",
+    "imageAlt": "Urban public street view of an overhead municipal LED streetlight fixture hanging loose from pole wiring during overcast conditions.",
+    "gpsTagged": true,
+    "officerNotes": [
+      {
+        "id": "n-3",
+        "author": "Elena Vance",
+        "role": "Chief Field Auditor (Central Delhi)",
+        "time": "18 hours ago",
+        "text": "Electrical isolation command sent to substation node #CC-12. Circuit de-energized to safeguard pedestrians."
+      }
+    ],
+    "priority": "High",
+    "citizenToken": "Verified Resident",
+    "complaintNumber": "#ICMRS-2026-001198",
+    "latitude": 28.6562,
+    "longitude": 77.241,
+    "citizenName": "Marcus Vance",
+    "citizenEmail": "citizen@icmrs.gov",
+    "department": "BSES Power & Municipal Lighting Wing",
+    "assignedOfficer": "Elena Vance",
+    "resolutionDetails": "",
+    "dateTime": "Logged Yesterday",
+    "attachments": [
+      {
+        "id": "att-ICMRS2026001198-1",
+        "name": "Photographic Evidence",
+        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuDGor6GIQRztnq1Fn78tsRToKFXcyUfB2pCehvBgbC2kfy02JB_bh2NghGkyRghoQj5IEktqAY81JDt6YBAmwkTlubTXGizz8H6Vi8rON_8DP5hd8B9P9ujYDsLNW5b_4wB6tmI6waZ5YIOkK1cmaNEjE4688acIWA1vStVXJ4OqshCrvbLsM3xRfbzUpsGGnJe94b7W2Xif13ILNOi08le2cwUqTgoVhbTj4M37AvPjCd6eyynr66LLg",
+        "type": "image/jpeg",
+        "uploadedAt": "2026-09-27T10:19:10.678Z"
+      }
+    ],
+    "statusHistory": [
+      {
+        "status": "Assigned & Scheduled",
+        "timestamp": "2026-09-27T10:19:10.678Z",
+        "updatedBy": "Marcus Vance",
+        "role": "citizen",
+        "notes": "Complaint initially filed and dispatched to BSES Power & Municipal Lighting Wing"
+      }
+    ],
+    "createdAt": "2026-09-27T10:19:10.678Z",
+    "updatedAt": "2026-09-27T10:19:10.678Z",
+    "userEmail": "citizen@icmrs.gov"
+  },
+  {
+    "id": "#ICMRS-2026-000984",
+    "title": "Monsoon Stormwater Underpass Drain Clearing",
+    "description": "Severe silt and monsoon stormwater backflow cleared on Ring Road underpass near AIIMS & Hauz Khas. Flow velocity restored to 100% with suction pump units.",
+    "category": "Water & Sanitation",
+    "location": "Ring Road Underpass, near AIIMS & Hauz Khas (New Delhi 110016)",
+    "coordinates": {
+      "lat": 28.5672,
+      "lng": 77.21
+    },
+    "status": "Resolved",
+    "pipelineStep": 5,
+    "pipelineStepName": "Step 5 of 5: Certified Sign-off",
+    "pipelinePercent": 100,
+    "assignedCrew": "Delhi Jal Board Hydro-Jet Suction Unit 08",
+    "timeLogged": "3 days ago",
+    "slaRemaining": "4h 00m SLA remaining (Escalated)",
+    "totalSlaHours": 4,
+    "slaStatus": "urgent",
+    "beforeImageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDdyTxPLgjVOtrbvSgH-z1pFks8qeq7JWBmOm1yswZgi-nVbeYZkrJdJwEM8EFq9T6ABjmQiA4bhxgm_Vh72Pt-xWE1MVc3XRQaMtbJd0WA2_HjsRQXTtR0Qm_KJe9zLFoWPYUTJIyDHM2EMbIwr3sNMM8DcVy-uX34mcdvYmKr7hwQM91TxEKPSrewhvQJ3ET8_PpaqEpNaI3_ZClUETKa-qQHRsxclVF4IePs71nMEbspIawGzL6vpA",
+    "beforeImageAlt": "Before photograph showing severe storm drain clogged with fallen debris, wet silt and street trash causing gutter flooding.",
+    "afterImageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuA2l8HaUVF9slNV9YxOmbqq1WjycFPXVErGy_cOc0QCGQTRJQsKGTtoIjrQ3EbbZ_293VRfFB0jDzrilVBQFy2m8gLtbeuD-imZ-bfwsLmZjdMPV6jb41KKUghwKP2j1Qow8xFhNXJ5JWJnw4pbdWF2Xn9JX4080XkmGAxy7u85Xf-udf8rFj2tvGwU7OqPN7YyM0Y6R9YYhnXFmrqsXdeSBkS-wrpMWM-PUyU8gSxE5zs9b5LofG3rIw",
+    "afterImageAlt": "After photograph showing clean, clear steel street drain grate with spotless asphalt and free-flowing water outlet.",
+    "gpsTagged": true,
+    "officerNotes": [
+      {
+        "id": "n-4",
+        "author": "Insp. Sunita Rao",
+        "role": "Chief Field Auditor (South Delhi)",
+        "time": "3 hours ago",
+        "text": "Visual forensic audit passed. Gutter flow rate 100%. Site perimeter sanitised and clear of waterlogging."
+      },
+      {
+        "id": "n-1790519752672",
+        "author": "Marcus Vance",
+        "role": "citizen",
+        "time": "Just now",
+        "text": "Priority escalated to Critical via Citizen Portal. Priority dispatch alerted."
+      }
+    ],
+    "inspector": {
+      "name": "Insp. Sunita Rao",
+      "title": "Chief Field Auditor (South Delhi)",
+      "avatar": "https://lh3.googleusercontent.com/aida-public/AB6AXuAo1spD6uHFwwgatDTJluJOHotpybzw1nBkawW4CpVC6tlgHanXHxZvE0b9hld20gHblmdWB1BKG26TxYFl08U0B-ZXXEI1jdhNWju4uXF9hCFgd5N9KkNaLrVmbsK6jSUlD-791HHLMzt7oy1RI-Z_Jg1iOQ8Hblq4NHF2N2s9dbKjfkqQu2gyn0Km1a1bvL1fpxUYzB9D3cLbyVdzxcmXvTJctldXOlrLGGDuADl4FDBluoZE6eIUaQ"
+    },
+    "resolvedTime": "Resolved 3h ago",
+    "rating": 5,
+    "priority": "Critical",
+    "citizenToken": "Verified Resident",
+    "complaintNumber": "#ICMRS-2026-000984",
+    "latitude": 28.5672,
+    "longitude": 77.21,
+    "citizenName": "Marcus Vance",
+    "citizenEmail": "citizen@icmrs.gov",
+    "department": "Delhi Jal Board Hydrology Unit",
+    "assignedOfficer": "Elena Vance",
+    "resolutionDetails": "Hazard remediated and signed off according to Municipal Safety Code §42.",
+    "dateTime": "3 days ago",
+    "attachments": [],
+    "statusHistory": [
+      {
+        "status": "Resolved",
+        "timestamp": "2026-09-27T10:19:10.678Z",
+        "updatedBy": "Marcus Vance",
+        "role": "citizen",
+        "notes": "Complaint initially filed and dispatched to Delhi Jal Board Hydrology Unit"
+      }
+    ],
+    "createdAt": "2026-09-27T10:19:10.678Z",
+    "updatedAt": "2026-09-27T14:35:54.837Z",
+    "userEmail": "citizen@icmrs.gov"
+  },
+  {
+    "id": "#ICMRS-2026-000871",
+    "title": "Pedestrian Zebra Crossing Sensor Recalibration",
+    "description": "Smart pedestrian pushbutton and audible walk countdown signal at Janakpuri District Centre crossing repaired for commuter crosswalk safety near Metro interchange.",
+    "category": "Public Safety & Transit",
+    "location": "Najafgarh Road Crossing, Janakpuri District Centre (West Delhi 110058)",
+    "coordinates": {
+      "lat": 28.6219,
+      "lng": 77.0878
+    },
+    "status": "Resolved",
+    "pipelineStep": 5,
+    "pipelineStepName": "Step 5 of 5: Certified Sign-off",
+    "pipelinePercent": 100,
+    "assignedCrew": "Delhi Traffic Police Telemetry Div & PWD Unit",
+    "timeLogged": "4 days ago",
+    "slaRemaining": "Certified Closed",
+    "totalSlaHours": 72,
+    "slaStatus": "resolved",
+    "beforeImageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDT2La5a4Q94QSB22nK-OlVmZbB19gMUB1PaQIHGfJtYm4yIAO7y4S3Ys7kUf5Axl5fpActrCkVu5dOLiuOty2ATzHloFJbnuoGxVQ8lejBeqW21A-TpdiYvyUxIWreYYOcylrGwBOQ9msJDui1pIR2yJ1-OeH-OxVYBQHAxa65oYF9627KKIg2goup0_UlRiFouEKCO3J485BhTia4Z_hHE25vrH_aVav6qYyTaeJtMClGDz7gr8dclQ",
+    "beforeImageAlt": "Before photograph showing cracked yellow crosswalk push button housing with vandalism and broken cover.",
+    "afterImageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuC_G5IcEAQcE5RjYxuLjUj27lbO_CDXWic6zAVb-7J8DC8wOpfvx9c76Kpw34OS0oflW2uVyuDsevnjvpO8AMSJ8SfY160HmvZBdg4B8oeuvs5uPKoP4g8wOi8_GOJqnXJ4Pj1Lx9wC_MspCBHbftbUpULM5BOPHtjYFOokp9DNoXjVTE3fCD1SwGq0gxIvWmeqS0AdqG_jlHt40PsNqIadkHQatlQPubE2gjdnb7LHAmYkg2DQ8meghQ",
+    "afterImageAlt": "After photograph showing brand new stainless steel crosswalk push button installed on clean black steel traffic pole with lighted sensor ring.",
+    "gpsTagged": true,
+    "officerNotes": [
+      {
+        "id": "n-5",
+        "author": "Eng. T. Kapoor",
+        "role": "Delhi Traffic Telemetry Wing",
+        "time": "2 days ago",
+        "text": "Piezo touch switch replaced. 20-second pedestrian walk signal synchronized with Najafgarh Road traffic signal controllers."
+      }
+    ],
+    "inspector": {
+      "name": "Eng. T. Kapoor",
+      "title": "Delhi Traffic Telemetry Wing",
+      "initials": "TK"
+    },
+    "resolvedTime": "Resolved 2d ago",
+    "rating": 4.5,
+    "priority": "Medium",
+    "citizenToken": "Verified Resident",
+    "complaintNumber": "#ICMRS-2026-000871",
+    "latitude": 28.6219,
+    "longitude": 77.0878,
+    "citizenName": "Marcus Vance",
+    "citizenEmail": "citizen@icmrs.gov",
+    "department": "Delhi Traffic Police & PWD Telemetry",
+    "assignedOfficer": "Elena Vance",
+    "resolutionDetails": "Hazard remediated and signed off according to Municipal Safety Code §42.",
+    "dateTime": "4 days ago",
+    "attachments": [],
+    "statusHistory": [
+      {
+        "status": "Resolved",
+        "timestamp": "2026-09-27T10:19:10.678Z",
+        "updatedBy": "Marcus Vance",
+        "role": "citizen",
+        "notes": "Complaint initially filed and dispatched to Delhi Traffic Police & PWD Telemetry"
+      }
+    ],
+    "createdAt": "2026-09-27T10:19:10.678Z",
+    "updatedAt": "2026-09-27T10:19:10.678Z",
+    "userEmail": "citizen@icmrs.gov"
+  },
+  {
+    "id": "#ICMRS-2026-001302",
+    "title": "Downed Gulmohar Tree Limb Blocking Dedicated Cycle Track",
+    "description": "Heavy Gulmohar branch fallen across two-way cycle lane and left-turn road near Dwarka Sector 10 Metro Station following nocturnal squall winds.",
+    "category": "Parks & Forestry",
+    "location": "Sector 10 Central Avenue, Dwarka (South West Delhi 110075)",
+    "coordinates": {
+      "lat": 28.5823,
+      "lng": 77.05
+    },
+    "status": "Dispatched",
+    "pipelineStep": 3,
+    "pipelineStepName": "Step 3 of 5: Chipper Crew on Site",
+    "pipelinePercent": 60,
+    "assignedCrew": "DDA & MCD Horticulture Rapid Team",
+    "timeLogged": "Logged 2 hrs ago",
+    "slaRemaining": "6h 15m SLA remaining",
+    "totalSlaHours": 8,
+    "slaStatus": "urgent",
+    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuCKUAmlJjfN4RPAZeqjdSap1DcOB1SYBxe9IkhPw69OcoRfzN6QW9RK5jlq0V3osMWttxlXtj53GJfTbQbMI2vEXOSab5pM0XkL7HHqx-jkf0jcmFZmz1f5yERzYI6vkssUgfhDTo1-7KYKHVDNp4gR9lv-EHqArNSk7ZuN_YooteMhIj4twCqPXhqRGdkoNpbuQfy7hBtDugONdYHXl9vkcEryHWAtX6PzW_paboSR2AIZcrcsGVrk7A",
+    "imageAlt": "Branch blocking road lane",
+    "gpsTagged": true,
+    "officerNotes": [
+      {
+        "id": "n-6",
+        "author": "Elena Vance",
+        "role": "Chief Field Auditor (Central Delhi)",
+        "time": "1 hour ago",
+        "text": "Priority raised to Level-2 due to heavy cycle transit and proximity to Metro station gate."
+      }
+    ],
+    "priority": "High",
+    "citizenToken": "Verified Resident",
+    "complaintNumber": "#ICMRS-2026-001302",
+    "latitude": 28.5823,
+    "longitude": 77.05,
+    "citizenName": "Marcus Vance",
+    "citizenEmail": "citizen@icmrs.gov",
+    "department": "Municipal Parks & Forestry Directorate",
+    "assignedOfficer": "Elena Vance",
+    "resolutionDetails": "",
+    "dateTime": "Logged 2 hrs ago",
+    "attachments": [
+      {
+        "id": "att-ICMRS2026001302-1",
+        "name": "Photographic Evidence",
+        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuCKUAmlJjfN4RPAZeqjdSap1DcOB1SYBxe9IkhPw69OcoRfzN6QW9RK5jlq0V3osMWttxlXtj53GJfTbQbMI2vEXOSab5pM0XkL7HHqx-jkf0jcmFZmz1f5yERzYI6vkssUgfhDTo1-7KYKHVDNp4gR9lv-EHqArNSk7ZuN_YooteMhIj4twCqPXhqRGdkoNpbuQfy7hBtDugONdYHXl9vkcEryHWAtX6PzW_paboSR2AIZcrcsGVrk7A",
+        "type": "image/jpeg",
+        "uploadedAt": "2026-09-27T10:19:10.678Z"
+      }
+    ],
+    "statusHistory": [
+      {
+        "status": "Dispatched",
+        "timestamp": "2026-09-27T10:19:10.678Z",
+        "updatedBy": "Marcus Vance",
+        "role": "citizen",
+        "notes": "Complaint initially filed and dispatched to Municipal Parks & Forestry Directorate"
+      }
+    ],
+    "createdAt": "2026-09-27T10:19:10.678Z",
+    "updatedAt": "2026-09-27T10:19:10.678Z",
+    "userEmail": "citizen@icmrs.gov"
+  },
+  {
+    "id": "#ICMRS-2026-001410",
+    "title": "Open Manhole Chamber Hazard on Market Service Road",
+    "description": "Heavy cast-iron sewer chamber cover dislodged on busy commercial market service lane. High risk for school vans and pedestrians.",
+    "category": "Water & Sanitation",
+    "location": "Ring Road Service Lane, Rohini Sector 9 (North West Delhi 110085)",
+    "coordinates": {
+      "lat": 28.714,
+      "lng": 77.123
+    },
+    "status": "In Progress",
+    "pipelineStep": 3,
+    "pipelineStepName": "Step 3 of 5: Chamber Barricading & Cover Fitting",
+    "pipelinePercent": 60,
+    "assignedCrew": "MCD Rohini Zone Maintenance Wing",
+    "timeLogged": "Logged 3 hrs ago",
+    "slaRemaining": "12h 15m SLA remaining",
+    "totalSlaHours": 24,
+    "slaStatus": "urgent",
+    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuCKUAmlJjfN4RPAZeqjdSap1DcOB1SYBxe9IkhPw69OcoRfzN6QW9RK5jlq0V3osMWttxlXtj53GJfTbQbMI2vEXOSab5pM0XkL7HHqx-jkf0jcmFZmz1f5yERzYI6vkssUgfhDTo1-7KYKHVDNp4gR9lv-EHqArNSk7ZuN_YooteMhIj4twCqPXhqRGdkoNpbuQfy7hBtDugONdYHXl9vkcEryHWAtX6PzW_paboSR2AIZcrcsGVrk7A",
+    "imageAlt": "Open manhole hazard on urban street",
+    "gpsTagged": true,
+    "officerNotes": [
+      {
+        "id": "n-7",
+        "author": "Insp. R. K. Meena",
+        "role": "Rohini Zone Field Officer",
+        "time": "2 hours ago",
+        "text": "Heavy-duty steel replacement cover transported from Rohini Central Depot. Hazard cones secured."
+      }
+    ],
+    "priority": "Critical",
+    "citizenToken": "Verified Resident",
+    "complaintNumber": "#ICMRS-2026-001410",
+    "latitude": 28.714,
+    "longitude": 77.123,
+    "citizenName": "Marcus Vance",
+    "citizenEmail": "citizen@icmrs.gov",
+    "department": "Delhi Jal Board Hydrology Unit",
+    "assignedOfficer": "Elena Vance",
+    "resolutionDetails": "",
+    "dateTime": "Logged 3 hrs ago",
+    "attachments": [
+      {
+        "id": "att-ICMRS2026001410-1",
+        "name": "Photographic Evidence",
+        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuCKUAmlJjfN4RPAZeqjdSap1DcOB1SYBxe9IkhPw69OcoRfzN6QW9RK5jlq0V3osMWttxlXtj53GJfTbQbMI2vEXOSab5pM0XkL7HHqx-jkf0jcmFZmz1f5yERzYI6vkssUgfhDTo1-7KYKHVDNp4gR9lv-EHqArNSk7ZuN_YooteMhIj4twCqPXhqRGdkoNpbuQfy7hBtDugONdYHXl9vkcEryHWAtX6PzW_paboSR2AIZcrcsGVrk7A",
+        "type": "image/jpeg",
+        "uploadedAt": "2026-09-27T10:19:10.678Z"
+      }
+    ],
+    "statusHistory": [
+      {
+        "status": "In Progress",
+        "timestamp": "2026-09-27T10:19:10.678Z",
+        "updatedBy": "Marcus Vance",
+        "role": "citizen",
+        "notes": "Complaint initially filed and dispatched to Delhi Jal Board Hydrology Unit"
+      }
+    ],
+    "createdAt": "2026-09-27T10:19:10.678Z",
+    "updatedAt": "2026-09-27T10:19:10.678Z",
+    "userEmail": "citizen@icmrs.gov"
+  },
+  {
+    "id": "#ICMRS-2026-001455",
+    "title": "High-Mast LED Streetlight Outage at Bus Interchange",
+    "description": "LED cluster on 20-meter high mast extinguished at Mayur Vihar Pocket 1 bus stop and e-rickshaw stand, creating low visibility area after sunset.",
+    "category": "Electrical & Lighting",
+    "location": "Pocket 1 Bus Interchange, Mayur Vihar Phase 1 (East Delhi 110091)",
+    "coordinates": {
+      "lat": 28.608,
+      "lng": 77.298
+    },
+    "status": "Assigned & Scheduled",
+    "pipelineStep": 2,
+    "pipelineStepName": "Step 2 of 5: Work Order Issued",
+    "pipelinePercent": 40,
+    "assignedCrew": "East Delhi MCD & BSES Streetlight Wing",
+    "timeLogged": "Logged 6 hrs ago",
+    "slaRemaining": "28h 30m SLA nominal",
+    "totalSlaHours": 48,
+    "slaStatus": "nominal",
+    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDGor6GIQRztnq1Fn78tsRToKFXcyUfB2pCehvBgbC2kfy02JB_bh2NghGkyRghoQj5IEktqAY81JDt6YBAmwkTlubTXGizz8H6Vi8rON_8DP5hd8B9P9ujYDsLNW5b_4wB6tmI6waZ5YIOkK1cmaNEjE4688acIWA1vStVXJ4OqshCrvbLsM3xRfbzUpsGGnJe94b7W2Xif13ILNOi08le2cwUqTgoVhbTj4M37AvPjCd6eyynr66LLg",
+    "imageAlt": "Streetlight pole out of service",
+    "gpsTagged": true,
+    "officerNotes": [
+      {
+        "id": "n-8",
+        "author": "Er. S. Gupta",
+        "role": "East Delhi Electrical Section",
+        "time": "4 hours ago",
+        "text": "Hydraulic cherry picker ladder vehicle scheduled for 18:00 repair run before darkness."
+      }
+    ],
+    "priority": "High",
+    "citizenToken": "Verified Resident",
+    "complaintNumber": "#ICMRS-2026-001455",
+    "latitude": 28.608,
+    "longitude": 77.298,
+    "citizenName": "Marcus Vance",
+    "citizenEmail": "citizen@icmrs.gov",
+    "department": "BSES Power & Municipal Lighting Wing",
+    "assignedOfficer": "Elena Vance",
+    "resolutionDetails": "",
+    "dateTime": "Logged 6 hrs ago",
+    "attachments": [
+      {
+        "id": "att-ICMRS2026001455-1",
+        "name": "Photographic Evidence",
+        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuDGor6GIQRztnq1Fn78tsRToKFXcyUfB2pCehvBgbC2kfy02JB_bh2NghGkyRghoQj5IEktqAY81JDt6YBAmwkTlubTXGizz8H6Vi8rON_8DP5hd8B9P9ujYDsLNW5b_4wB6tmI6waZ5YIOkK1cmaNEjE4688acIWA1vStVXJ4OqshCrvbLsM3xRfbzUpsGGnJe94b7W2Xif13ILNOi08le2cwUqTgoVhbTj4M37AvPjCd6eyynr66LLg",
+        "type": "image/jpeg",
+        "uploadedAt": "2026-09-27T10:19:10.678Z"
+      }
+    ],
+    "statusHistory": [
+      {
+        "status": "Assigned & Scheduled",
+        "timestamp": "2026-09-27T10:19:10.678Z",
+        "updatedBy": "Marcus Vance",
+        "role": "citizen",
+        "notes": "Complaint initially filed and dispatched to BSES Power & Municipal Lighting Wing"
+      }
+    ],
+    "createdAt": "2026-09-27T10:19:10.678Z",
+    "updatedAt": "2026-09-27T10:19:10.678Z",
+    "userEmail": "citizen@icmrs.gov"
+  },
+  {
+    "id": "#ICMRS-2026-000780",
+    "title": "Secondary Waste Dhalao Spill & Sanitation Cleansing",
+    "description": "Solid waste overflow outside secondary collection point cleared with compactor truck. Full chemical lime disinfection and deodorizing wash executed.",
+    "category": "Waste Management",
+    "location": "Feroze Gandhi Marg, Lajpat Nagar III (South East Delhi 110024)",
+    "coordinates": {
+      "lat": 28.57,
+      "lng": 77.24
+    },
+    "status": "Resolved",
+    "pipelineStep": 5,
+    "pipelineStepName": "Step 5 of 5: Certified Sign-off",
+    "pipelinePercent": 100,
+    "assignedCrew": "MCD Solid Waste Green Cleansing Fleet",
+    "timeLogged": "Resolved yesterday",
+    "slaRemaining": "Certified Closed",
+    "totalSlaHours": 24,
+    "slaStatus": "resolved",
+    "beforeImageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDdyTxPLgjVOtrbvSgH-z1pFks8qeq7JWBmOm1yswZgi-nVbeYZkrJdJwEM8EFq9T6ABjmQiA4bhxgm_Vh72Pt-xWE1MVc3XRQaMtbJd0WA2_HjsRQXTtR0Qm_KJe9zLFoWPYUTJIyDHM2EMbIwr3sNMM8DcVy-uX34mcdvYmKr7hwQM91TxEKPSrewhvQJ3ET8_PpaqEpNaI3_ZClUETKa-qQHRsxclVF4IePs71nMEbspIawGzL6vpA",
+    "beforeImageAlt": "Before photograph showing waste clutter",
+    "afterImageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuA2l8HaUVF9slNV9YxOmbqq1WjycFPXVErGy_cOc0QCGQTRJQsKGTtoIjrQ3EbbZ_293VRfFB0jDzrilVBQFy2m8gLtbeuD-imZ-bfwsLmZjdMPV6jb41KKUghwKP2j1Qow8xFhNXJ5JWJnw4pbdWF2Xn9JX4080XkmGAxy7u85Xf-udf8rFj2tvGwU7OqPN7YyM0Y6R9YYhnXFmrqsXdeSBkS-wrpMWM-PUyU8gSxE5zs9b5LofG3rIw",
+    "afterImageAlt": "After photograph showing sanitized clean road pavement",
+    "gpsTagged": true,
+    "officerNotes": [
+      {
+        "id": "n-9",
+        "author": "Insp. Sunita Rao",
+        "role": "Chief Field Auditor (South Delhi)",
+        "time": "Yesterday",
+        "text": "Compactor clearance certified. Anti-microbial lime applied across pavement."
+      }
+    ],
+    "inspector": {
+      "name": "Insp. Sunita Rao",
+      "title": "Chief Field Auditor (South Delhi)",
+      "initials": "SR"
+    },
+    "resolvedTime": "Resolved yesterday",
+    "rating": 5,
+    "priority": "Medium",
+    "citizenToken": "Verified Resident",
+    "complaintNumber": "#ICMRS-2026-000780",
+    "latitude": 28.57,
+    "longitude": 77.24,
+    "citizenName": "Marcus Vance",
+    "citizenEmail": "citizen@icmrs.gov",
+    "department": "Clean Delhi Solid Waste Response",
+    "assignedOfficer": "Elena Vance",
+    "resolutionDetails": "Hazard remediated and signed off according to Municipal Safety Code §42.",
+    "dateTime": "Resolved yesterday",
+    "attachments": [],
+    "statusHistory": [
+      {
+        "status": "Resolved",
+        "timestamp": "2026-09-27T10:19:10.678Z",
+        "updatedBy": "Marcus Vance",
+        "role": "citizen",
+        "notes": "Complaint initially filed and dispatched to Clean Delhi Solid Waste Response"
+      }
+    ],
+    "createdAt": "2026-09-27T10:19:10.678Z",
+    "updatedAt": "2026-09-27T10:19:10.678Z",
+    "userEmail": "citizen@icmrs.gov"
+  }
+]
