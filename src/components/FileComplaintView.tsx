@@ -260,7 +260,7 @@ export const FileComplaintView: React.FC<FileComplaintViewProps> = ({
       setSubmittedTicket(newTicket);
     } catch (err: any) {
       console.error('[FileComplaintView] Submission error:', err);
-      setSubmitError(err?.message || 'Database error: Unable to record complaint. Please ensure you are logged into a verified Supabase account.');
+      setSubmitError(err?.message || 'Unable to record complaint. Please ensure you are signed in and try again.');
     } finally {
       setIsSubmitting(false);
     }

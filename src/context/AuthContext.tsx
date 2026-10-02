@@ -14,10 +14,12 @@ interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
+  clearError: () => void;
   signInWithGoogle: () => Promise<void>;
   login: (credentials: LoginCredentials, rememberMe?: boolean) => Promise<AuthResponse>;
   register: (credentials: RegisterCredentials, rememberMe?: boolean) => Promise<AuthResponse>;
   resetPassword: (email: string) => Promise<{ success: boolean; message: string }>;
+  resendVerificationEmail: (email: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   isAdmin: boolean;
   isOfficer: boolean;
@@ -146,8 +148,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const oauthErr = params.get('error');
       if (errorDesc || oauthErr) {
         const clean = decodeURIComponent(errorDesc || oauthErr || 'Google authentication failed');
-        console.warn('[AuthContext] Google OAuth redirect error:', clean);
-        setError(`Google Sign-In: ${clean}`);
+        console.warn('[AuthContext] Google OAuth redirect error (internal):', clean);
+        setError('We could not complete your sign-in with Google. Please try again or use your email and password.');
         window.history.replaceState(null, '', window.location.pathname);
       }
     }
@@ -229,6 +231,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const clearError = () => {
+    setError(null);
+  };
+
   /**
    * Supabase credential login (with automatic real-account provision for demo presets)
    */
@@ -248,9 +254,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (signInError) {
+        console.warn('[AuthContext] Sign-in notice (internal):', signInError.message);
+        const lowerMsg = signInError.message.toLowerCase();
+        const isEmailNotConfirmed = 
+          lowerMsg.includes('email not confirmed') || 
+          lowerMsg.includes('not confirmed') || 
+          lowerMsg.includes('unconfirmed');
+        const isInvalidCreds = 
+          lowerMsg.includes('invalid login credentials') || 
+          lowerMsg.includes('invalid credentials');
+
         // If demo account hasn't been created yet on Supabase Auth, register it automatically
-        if ((isPresetAdmin || isPresetOfficer || isPresetCitizen) && 
-            signInError.message.toLowerCase().includes('invalid login credentials')) {
+        if ((isPresetAdmin || isPresetOfficer || isPresetCitizen) && isInvalidCreds) {
           const role = isPresetAdmin ? 'admin' : (isPresetOfficer ? 'officer' : 'citizen');
           const name = isPresetAdmin ? 'Dir. A. Vance-Miller' : (isPresetOfficer ? 'Insp. Elena Vance' : 'Marcus Vance');
           const department = isPresetAdmin 
@@ -276,14 +291,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } else if (signUpData.user && !signUpError) {
             return {
               success: false,
-              error: 'User created in Supabase Auth, but requires email confirmation before signing in. In Supabase Dashboard, toggle OFF "Confirm email" under Authentication -> Providers -> Email, or confirm the user in the Users tab.'
+              needsEmailVerification: true,
+              error: 'Email verification required',
             };
           }
         }
 
+        if (isEmailNotConfirmed) {
+          return {
+            success: false,
+            needsEmailVerification: true,
+            error: 'Email verification required',
+          };
+        }
+
+        if (isInvalidCreds) {
+          return { 
+            success: false, 
+            error: 'Invalid credentials',
+          };
+        }
+
         return { 
           success: false, 
-          error: signInError.message || 'Invalid email or password. Please verify credentials.' 
+          error: 'Something went wrong',
         };
       }
 
@@ -294,16 +325,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (data.user && !data.session) {
         return {
           success: false,
-          error: 'Email address has not been confirmed yet. Please verify your email or disable "Confirm email" in Supabase settings.'
+          needsEmailVerification: true,
+          error: 'Email verification required',
         };
       }
     } catch (err: unknown) {
-      console.error('[AuthContext] Login error:', err);
-      const msg = err instanceof Error ? err.message : 'Login failed';
-      return { success: false, error: msg };
+      console.error('[AuthContext] Login error (internal):', err);
+      return { success: false, error: 'Something went wrong' };
     }
 
-    return { success: false, error: 'Authentication failed. Please verify credentials.' };
+    return { success: false, error: 'Something went wrong' };
   };
 
   /**
@@ -329,25 +360,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (signUpError) {
+        console.error('[AuthContext] Registration error (internal):', signUpError);
         setLoading(false);
-        return { success: false, error: signUpError.message };
+        const lowerMsg = signUpError.message.toLowerCase();
+        let userFacingError = 'Could not complete registration. Please try again.';
+        if (lowerMsg.includes('already registered') || lowerMsg.includes('already exists')) {
+          userFacingError = 'An account with this email address already exists. Please sign in instead.';
+        } else if (lowerMsg.includes('password should be at least')) {
+          userFacingError = 'Password must be at least 6 characters long.';
+        }
+        return { success: false, error: userFacingError };
       }
 
       if (data.user) {
+        if (!data.session) {
+          // Email confirmation is required by Supabase Auth configuration
+          setLoading(false);
+          return {
+            success: true,
+            needsEmailVerification: true,
+            message: 'Please verify your email address before signing in. Check your inbox for the verification link.',
+          };
+        }
+
         const authUser = await fetchAuthUserProfile(data.user);
         setCurrentUser(authUser);
         setLoading(false);
         return { 
           success: true, 
           user: authUser,
-          message: data.session ? undefined : 'Registration successful! Check your email to confirm your account.' 
+          message: 'Account created successfully!' 
         };
       }
     } catch (err: unknown) {
-      console.error('[AuthContext] Registration error:', err);
+      console.error('[AuthContext] Registration exception (internal):', err);
       setLoading(false);
-      const msg = err instanceof Error ? err.message : 'Registration failed';
-      return { success: false, error: msg };
+      return { success: false, error: 'Registration failed. Please check network connection.' };
     }
 
     setLoading(false);
@@ -359,21 +407,70 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    */
   const resetPassword = async (emailToReset: string): Promise<{ success: boolean; message: string }> => {
     try {
-      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(emailToReset.trim(), {
+      const emailClean = emailToReset.trim().toLowerCase();
+      if (!emailClean || !emailClean.includes('@')) {
+        return { success: false, message: 'Please enter a valid email address.' };
+      }
+
+      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(emailClean, {
         redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined,
       });
 
       if (resetErr) {
-        return { success: false, message: resetErr.message };
+        console.warn('[AuthContext] Password reset notice (internal):', resetErr.message);
+        return { 
+          success: false, 
+          message: 'Unable to send reset email right now. Please try again in a moment.' 
+        };
       }
 
       return { 
         success: true, 
-        message: 'Password reset instructions have been sent to your email address.' 
+        message: 'If an account exists with that email, password reset instructions have been sent.' 
       };
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to send password reset email. Please try again.';
-      return { success: false, message: msg };
+      console.error('[AuthContext] Password reset exception (internal):', err);
+      return { success: false, message: 'Failed to send password reset email. Please try again.' };
+    }
+  };
+
+  /**
+   * Resend confirmation / verification email via Supabase Auth
+   */
+  const resendVerificationEmail = async (emailToResend: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const emailClean = emailToResend.trim().toLowerCase();
+      if (!emailClean || !emailClean.includes('@')) {
+        return { success: false, message: 'Please enter a valid email address.' };
+      }
+
+      const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
+      const { error: resendErr } = await supabase.auth.resend({
+        type: 'signup',
+        email: emailClean,
+        options: {
+          emailRedirectTo: redirectUrl,
+        },
+      });
+
+      if (resendErr) {
+        console.warn('[AuthContext] Resend verification notice (internal):', resendErr.message);
+        return {
+          success: false,
+          message: 'Unable to resend verification email right now. Please wait a minute and try again.',
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Verification email resent! Please check your inbox and spam folders.',
+      };
+    } catch (err: unknown) {
+      console.error('[AuthContext] Resend verification exception (internal):', err);
+      return {
+        success: false,
+        message: 'Failed to resend verification email. Please check your network and try again.',
+      };
     }
   };
 
@@ -409,10 +506,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated,
         loading,
         error,
+        clearError,
         signInWithGoogle,
         login,
         register,
         resetPassword,
+        resendVerificationEmail,
         logout,
         isAdmin,
         isOfficer,
