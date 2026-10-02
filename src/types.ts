@@ -30,6 +30,7 @@ export interface AuthResponse {
   user?: AuthUser;
   error?: string;
   message?: string;
+  needsEmailVerification?: boolean;
 }
 
 export type NavigationTab = 
