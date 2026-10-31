@@ -97,6 +97,41 @@ export async function loginUser(credentials: LoginCredentials, rememberMe = fals
   }
 }
 
+export async function registerUser(credentials: { name: string; email: string; password: string; wardOrSector?: string }, rememberMe = false): Promise<AuthResponse> {
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: credentials.name.trim(),
+        email: credentials.email.trim(),
+        password: credentials.password,
+        wardOrSector: credentials.wardOrSector,
+      }),
+    });
+
+    const data: AuthResponse = await res.json();
+    if (res.ok && data.success && data.token && data.user) {
+      authStorage.setToken(data.token, rememberMe);
+      authStorage.setCachedUser(data.user, rememberMe);
+      return data;
+    }
+
+    return {
+      success: false,
+      error: data.error || 'Failed to complete registration.',
+    };
+  } catch (err) {
+    console.error('API register error:', err);
+    return {
+      success: false,
+      error: 'Network connection failure. Please check your connection and try again.',
+    };
+  }
+}
+
 export async function fetchCurrentUser(): Promise<AuthResponse> {
   const token = authStorage.getToken();
   if (!token) {
