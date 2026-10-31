@@ -54,6 +54,19 @@
   --color-error-container: #fee2e2;
   --color-on-error-container: #991b1b;
 
+  /* ICMRS Enterprise Civic Design Tokens */
+  --color-gov-bg: #F4F7FB;
+  --color-gov-card: #FFFFFF;
+  --color-gov-input: #F8FAFC;
+  --color-gov-border: #E2E8F0;
+  --color-gov-text-primary: #172B4D;
+  --color-gov-text-secondary: #64748B;
+  --color-gov-primary: #315EBD;
+  --color-gov-primary-hover: #254B9A;
+  --color-gov-accent: #0D9488;
+  --color-gov-success: #059669;
+  --color-gov-error: #DC2626;
+
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 }
