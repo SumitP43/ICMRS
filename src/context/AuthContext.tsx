@@ -256,9 +256,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     const emailLower = credentials.email.toLowerCase().trim();
 
-    const isPresetAdmin = emailLower === 'admin@icmrs.gov' && (credentials.password === 'Admin123!' || credentials.password === 'Admin@123456');
-    const isPresetOfficer = emailLower === 'officer@icmrs.gov' && (credentials.password === 'Officer123!' || credentials.password === 'Officer@123456');
-    const isPresetCitizen = emailLower === 'citizen@icmrs.gov' && credentials.password === 'Citizen123!';
+    const isPresetAdmin = 
+      (emailLower === 'admin@icmrs.gov' || emailLower === 'hq.director@mcd.nic.in') && 
+      (credentials.password === 'Admin123!' || credentials.password === 'Admin@123456' || credentials.password === 'MCDCentralHQ!Sec4');
+    const isPresetOfficer = 
+      (emailLower === 'officer@icmrs.gov' || emailLower === 'insp.ward42@mcd.gov.in') && 
+      (credentials.password === 'Officer123!' || credentials.password === 'Officer@123456' || credentials.password === 'FieldDispatch#99');
+    const isPresetCitizen = 
+      (emailLower === 'citizen@icmrs.gov' || emailLower === 'r.sharma.delhi@gmail.com') && 
+      (credentials.password === 'Citizen123!' || credentials.password === 'DelhiCitizen#2025');
 
     // 1. Try Supabase Auth
     try {
