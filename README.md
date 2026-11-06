@@ -1,3 +1,4 @@
+[![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/SumitP43/badge.svg)](https://hub.xerj.org/contributors/SumitP43)
 # ICMRS — Intelligent Civic Management & Response System
 
 ICMRS is an AI-powered civic-management platform designed to make citizen
